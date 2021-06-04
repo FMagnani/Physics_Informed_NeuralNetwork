@@ -16,6 +16,13 @@ from tqdm import tqdm
 
 import NeuralNets as NN
 
+#Plotting
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.interpolate import griddata
+
+
 
 #%%
 
@@ -98,7 +105,7 @@ if __name__ == "__main__":
 
     model = NN.neural_net(ub, lb)
 
-    n_iterations = 50  # Number of training steps 
+    n_iterations = 100  # Number of training steps 
     
     # Optimizer and loss
     
@@ -137,6 +144,97 @@ if __name__ == "__main__":
 
 
 #%%
+
+    ######################################################################
+    ############################# Plotting ###############################
+    ######################################################################    
+    
+    U_pred = griddata(X_star, tf.reshape(u_pred, [-1]), (X, T), method='cubic')
+    V_pred = griddata(X_star, tf.reshape(v_pred, [-1]), (X, T), method='cubic')
+    H_pred = griddata(X_star, tf.reshape(h_pred, [-1]), (X, T), method='cubic')
+
+    # FU_pred = griddata(X_star, tf.reshape(f_u_pred, [-1]), (X, T), method='cubic')
+    # FV_pred = griddata(X_star, tf.reshape(f_v_pred, [-1]), (X, T), method='cubic')     
+    
+    
+    X0 = np.concatenate((x0, 0*x0), 1) # (x0, 0)
+    X_lb = np.concatenate((0*tb + lb[0], tb), 1) # (lb[0], tb)
+    X_ub = np.concatenate((0*tb + ub[0], tb), 1) # (ub[0], tb)
+    X_u_train = np.vstack([X0, X_lb, X_ub])
+
+    
+
+    ###########  h(t,x)  ##################    
+    
+    fig1, ax1 = plt.subplots(1,1)
+    
+    gs0 = gridspec.GridSpec(1, 2)
+    gs0.update(top=1-0.06, bottom=1-1/3, left=0.15, right=0.85, wspace=0)
+    ax1 = plt.subplot(gs0[:, :])
+    
+    h = ax1.imshow(H_pred.T, interpolation='nearest', cmap='YlGnBu', 
+                  extent=[lb[1], ub[1], lb[0], ub[0]], 
+                  origin='lower', aspect='auto')
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    fig1.colorbar(h, cax=cax)
+    
+    ax1.plot(X_u_train[:,1], X_u_train[:,0], 'kx', label = 'Data (%d points)' % (X_u_train.shape[0]), markersize = 4, clip_on = False)
+    
+    line = np.linspace(x.min(), x.max(), 2)[:,None]
+    ax1.plot(t[75]*np.ones((2,1)), line, 'k--', linewidth = 1)
+    ax1.plot(t[100]*np.ones((2,1)), line, 'k--', linewidth = 1)
+    ax1.plot(t[125]*np.ones((2,1)), line, 'k--', linewidth = 1)    
+    
+    ax1.set_xlabel('$t$')
+    ax1.set_ylabel('$x$')
+    leg = ax1.legend(frameon=False, loc = 'best')
+#    plt.setp(leg.get_texts(), color='w')
+    ax1.set_title('$|h(t,x)|$', fontsize = 10)
+    
+
+    
+
+    ########   h(t,x) slices ##################    
+ 
+    gs1 = gridspec.GridSpec(1, 3)
+    gs1.update(top=1-1/3, bottom=0, left=0.1, right=0.9, wspace=0.5)
+    
+    ax = plt.subplot(gs1[0, 0])
+    ax.plot(x,Exact_h[:,75], 'b-', linewidth = 2, label = 'Exact')       
+    ax.plot(x,H_pred[75,:], 'r--', linewidth = 2, label = 'Prediction')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$|h(t,x)|$')    
+    ax.set_title('$t = %.2f$' % (t[75]), fontsize = 10)
+    ax.axis('square')
+    ax.set_xlim([-5.1,5.1])
+    ax.set_ylim([-0.1,5.1])
+    
+    ax = plt.subplot(gs1[0, 1])
+    ax.plot(x,Exact_h[:,100], 'b-', linewidth = 2, label = 'Exact')       
+    ax.plot(x,H_pred[100,:], 'r--', linewidth = 2, label = 'Prediction')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$|h(t,x)|$')
+    ax.axis('square')
+    ax.set_xlim([-5.1,5.1])
+    ax.set_ylim([-0.1,5.1])
+    ax.set_title('$t = %.2f$' % (t[100]), fontsize = 10)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.8), ncol=5, frameon=False)
+    
+    ax = plt.subplot(gs1[0, 2])
+    ax.plot(x,Exact_h[:,125], 'b-', linewidth = 2, label = 'Exact')       
+    ax.plot(x,H_pred[125,:], 'r--', linewidth = 2, label = 'Prediction')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$|h(t,x)|$')
+    ax.axis('square')
+    ax.set_xlim([-5.1,5.1])
+    ax.set_ylim([-0.1,5.1])    
+    ax.set_title('$t = %.2f$' % (t[125]), fontsize = 10)
+    
+    
+
+#%%
+
 
 
 
