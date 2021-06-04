@@ -11,6 +11,11 @@ import numpy as np
 import tensorflow as tf
 import scipy.io
 from pyDOE import lhs 
+import time
+from tqdm import tqdm
+
+import NeuralNets as NN
+
 
 #%%
 
@@ -85,10 +90,53 @@ if __name__ == "__main__":
     t_f = X_f[:,1:2]    
 
     
+#%%
+
+    ########################################
+    ##   MODEL TRAINING AND PREDICTION    ##
+    ########################################
+
+    model = NN.neural_net(ub, lb)
+
+    n_iterations = 50  # Number of training steps 
     
+    # Optimizer and loss
+    
+    optimizer = tf.keras.optimizers.Adam()
+    
+    def loss():
+        x_sq = tf.pow(x, 2)
+        y = tf.reduce_mean(x_sq)
+        return y
+
+    # Training
+    
+    start_time = time.time()    
+    #Train step
+    for _ in tqdm(range(n_iterations)):
+        optimizer.minimize(loss, model.trainable_variables)
+    elapsed = time.time() - start_time                
+    print('Training time: %.4f' % (elapsed))
+            
+    # final prediction
+#    u_pred, v_pred, f_u_pred, f_v_pred = model(X_star)
+    u_pred, v_pred = model(X_star)    
+    h_pred = np.sqrt(u_pred**2 + v_pred**2)
+                
+    # final error
+    u_pred = tf.reshape(u_pred, shape=(51456,1))
+    v_pred = tf.reshape(v_pred, shape=(51456,1))
+    h_pred = tf.reshape(h_pred, shape=(51456,1))
+
+    error_u = np.linalg.norm(u_star-u_pred,2)/np.linalg.norm(u_star,2)
+    error_v = np.linalg.norm(v_star-v_pred,2)/np.linalg.norm(v_star,2)
+    error_h = np.linalg.norm(h_star-h_pred,2)/np.linalg.norm(h_star,2)
+    print('Error u: %e' % (error_u))
+    print('Error v: %e' % (error_v))
+    print('Error h: %e' % (error_h))
 
 
-
+#%%
 
 
 
