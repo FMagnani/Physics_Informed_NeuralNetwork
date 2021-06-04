@@ -105,15 +105,15 @@ if __name__ == "__main__":
 
     model = NN.neural_net(ub, lb)
 
-    n_iterations = 100  # Number of training steps 
+    n_iterations = 50  # Number of training steps 
     
     # Optimizer and loss
     
     optimizer = tf.keras.optimizers.Adam()
     
     def loss():
-        x_sq = tf.pow(x, 2)
-        y = tf.reduce_mean(x_sq)
+        x_pred = model(x)
+        y = tf.reduce_mean(x_pred)
         return y
 
     # Training
