@@ -17,11 +17,10 @@ class neural_net(tf.keras.Model):
     
     def __init__(self, ub, lb, hidden_dim=100):
         super(neural_net, self).__init__()
-
+        
         self.lb = lb
         self.ub = ub
 
-        self.in_dim = 3
         self.hidden_dim = hidden_dim
         self.out_dim = 2
         
@@ -37,9 +36,9 @@ class neural_net(tf.keras.Model):
         self.hidden_4 = Dense(self.hidden_dim, activation='tanh',
                     bias_initializer="zeros")
 
-
         self.last_layer = Dense(self.out_dim,
-                    bias_initializer="zeros")
+                    bias_initializer="zeros",
+                    dtype = 'float64')
 
     def call(self, X):
         
