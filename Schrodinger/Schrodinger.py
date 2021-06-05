@@ -11,8 +11,6 @@ import numpy as np
 import tensorflow as tf
 import scipy.io
 from pyDOE import lhs 
-import time
-from tqdm import tqdm
 
 import NeuralNets as NN
 
@@ -125,21 +123,12 @@ if __name__ == "__main__":
     ########################################
 
     # This is a GLOBAL VARIABLE to which every function has access
-    model = NN.Schrodinger_PINN(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
+    model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
 
-    n_iterations = 2  # Number of training steps 
+    n_iterations = 1  # Number of training steps 
     
-##### Optimizer and loss    
-    optimizer = tf.keras.optimizers.Adam()
-
 ##### Training
-    
-    start_time = time.time()    
-    #Train step
-    for _ in tqdm(range(n_iterations)):
-        model.train_step(n_iterations, optimizer)
-    elapsed = time.time() - start_time                
-    print('Training time: %.4f' % (elapsed))
+    model.train(n_iterations)
             
 ##### final prediction
     u_pred, v_pred, f_u_pred, f_v_pred = model.predict(X_star[:,0], X_star[:,1])
