@@ -15,7 +15,7 @@ from tensorflow.keras.layers import Dense
 
 class neural_net(tf.keras.Model):
     
-    def __init__(self, ub, lb, hidden_dim=40):
+    def __init__(self, ub, lb, hidden_dim=100):
         super(neural_net, self).__init__()
 
         self.lb = lb
