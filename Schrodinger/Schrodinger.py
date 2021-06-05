@@ -117,7 +117,7 @@ if __name__ == "__main__":
     t_ub = tf.convert_to_tensor(t_ub[:,0])
     x_f = tf.convert_to_tensor(x_f[:,0])
     t_f = tf.convert_to_tensor(t_f[:,0])
-    
+    X_star = tf.convert_to_tensor(X_star)
    
 #%%
 
@@ -128,7 +128,9 @@ if __name__ == "__main__":
     # This is a GLOBAL VARIABLE to which every function has access
     model = NN.neural_net(ub, lb)
 
-    n_iterations = 10  # Number of training steps 
+    net_f_uv = create_net_f_uv(x_f, t_f)
+
+    n_iterations = 5  # Number of training steps 
     
 ##### Optimizer and loss    
     optimizer = tf.keras.optimizers.Adam()
@@ -144,8 +146,11 @@ if __name__ == "__main__":
     print('Training time: %.4f' % (elapsed))
             
 ##### final prediction
+    net_f_uv = create_net_f_uv(X_star[:,0], X_star[:,1])
+    
     u_pred, v_pred = model(X_star)
     f_u_pred, f_v_pred = net_f_uv()    
+ 
     h_pred = np.sqrt(u_pred**2 + v_pred**2)
                 
 ##### final error
@@ -171,8 +176,8 @@ if __name__ == "__main__":
     V_pred = griddata(X_star, tf.reshape(v_pred, [-1]), (X, T), method='cubic')
     H_pred = griddata(X_star, tf.reshape(h_pred, [-1]), (X, T), method='cubic')
 
-    # FU_pred = griddata(X_star, tf.reshape(f_u_pred, [-1]), (X, T), method='cubic')
-    # FV_pred = griddata(X_star, tf.reshape(f_v_pred, [-1]), (X, T), method='cubic')     
+    FU_pred = griddata(X_star, f_u_pred, (X, T), method='cubic')
+    FV_pred = griddata(X_star, f_v_pred, (X, T), method='cubic')     
     
     
     X0 = np.concatenate((x0, 0*x0), 1) # (x0, 0)
