@@ -12,6 +12,26 @@ import tensorflow as tf
 
 #%%    
 
+# Train step:
+    # - Compute the loss (watching)
+    # - Compute the gradient of the loss wrt the model weights (trainable vars)
+    # - Apply the gradients (optimizer does)
+    
+# Access to model guaranteed
+# Data needed: input and their labels for prediction, iterations, optimizer
+def train_step(x0, t0, u0, v0, n_iterations, optimizer):
+    
+    with tf.GradientTape() as tape:
+        
+        loss_value = loss(u0,v0, model(x0,t0))
+    
+    grads = tape.gradients(loss_value, model.trainable.variables)
+    
+    optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
+
+
+
 # def net_uv(x, t):
     
 #     X = tf.concat([x,t],1)
@@ -31,6 +51,8 @@ import tensorflow as tf
 # That's not a real function, it has no inputs. It simply carry the computation
 # of the derivatives of the neural net model and returns the f_u, f_v values
 # NEEDS ACCESS TO MODEL AND TO X_F, T_F
+# Access to x_f, t_f can be given with a function factory.
+# Access to model must be global since it changes along time
 def net_f_uv():
         
     with tf.GradientTape(persistent=True) as tape:
