@@ -61,37 +61,42 @@ def loss(x0,t0, u0,v0):
 
 #     return u, v, u_x, v_x
 
-# That's not a real function, it has no inputs. It simply carry the computation
-# of the derivatives of the neural net model and returns the f_u, f_v values
-# NEEDS ACCESS TO MODEL AND TO X_F, T_F
-# Access to x_f, t_f can be given with a function factory.
-# Access to model must be global since it changes along time
-def net_f_uv():
+def create_net_f_uv(x_f, t_f):
+    
+    # NEEDS ACCESS TO MODEL
+    def net_f_uv():
         
-    with tf.GradientTape(persistent=True) as tape:
-        
-        tape.watch(x_f)
-        tape.watch(t_f)
-        X_f = tf.stack([x_f, t_f], axis=1) # shape = (N_f,2)
-        
-        # Prediction, watched
-        u, v = model(X_f)
+        with tf.GradientTape(persistent=True) as tape:
             
-        u_x = tape.gradient(u, x_f)
-        v_x = tape.gradient(v, x_f)
+            tape.watch(x_f)
+            tape.watch(t_f)
+            X_f = tf.stack([x_f, t_f], axis=1) # shape = (N_f,2)
+            
+            u, v = model(X_f)
+                
+            u_x = tape.gradient(u, x_f)
+            v_x = tape.gradient(v, x_f)
+            
+        u_t = tape.gradient(u, t_f)
+        v_t = tape.gradient(v, x_f)        
+            
+        u_xx = tape.gradient(u_x, x_f)
+        v_xx = tape.gradient(v_x, x_f)
+    
+        del tape
+    
+        f_u = u_t + 0.5*v_xx + (u**2 + v**2)*v    
+        f_v = v_t - 0.5*u_xx - (u**2 + v**2)*u   
+    
+        return f_u, f_v
 
-    u_t = tape.gradient(u, t_f)
-    v_t = tape.gradient(v, x_f)        
-    
-    u_xx = tape.gradient(u_x, x_f)
-    v_xx = tape.gradient(v_x, x_f)
-    
-    del tape
-    
-    f_u = u_t + 0.5*v_xx + (u**2 + v**2)*v    
-    f_v = v_t - 0.5*u_xx - (u**2 + v**2)*u   
-    
-    return f_u, f_v
+    return net_f_uv
+
+
+
+
+
+
 
 
 
