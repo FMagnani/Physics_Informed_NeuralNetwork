@@ -15,6 +15,7 @@ import time
 from tqdm import tqdm
 
 import NeuralNets as NN
+from Utilities import net_uv, net_f_uv
 
 #Plotting
 import matplotlib.pyplot as plt
@@ -96,7 +97,50 @@ if __name__ == "__main__":
     x_f = X_f[:,0:1]
     t_f = X_f[:,1:2]    
 
+    # Casting to float32, the output dtype of the predictions
+    # x0 = tf.cast(x0, dtype='float32')
+    # t0 = tf.cast(x0, dtype='float32')
+    # x_lb = tf.cast(x_lb, dtype='float32')
+    # t_lb = tf.cast(t_lb, dtype='float32')
+    # x_ub = tf.cast(x_ub, dtype='float32')
+    # t_ub = tf.cast(t_ub, dtype='float32')
+    # x_f = tf.cast(x_f, dtype='float32')
+    # t_f = tf.cast(t_f, dtype='float32')
+    # u0 = tf.cast(u0, dtype='float32')
+    # v0 = tf.cast(v0, dtype='float32')
+
     
+#%%
+
+    def create_loss(x_lb, t_lb, x_ub, t_ub, x_f, t_f, u0, v0):
+                
+        def loss():
+
+            X = tf.concat([x0,t0],1)
+            
+            u0_pred, v0_pred = model(X)
+                
+            u_lb_pred, v_lb_pred, u_x_lb_pred, v_x_lb_pred = net_uv(x_lb, t_lb)
+            u_ub_pred, v_ub_pred, u_x_ub_pred, v_x_ub_pred = net_uv(x_ub, t_ub)
+
+            f_u_pred, f_v_pred = net_f_uv(x_f, t_f)
+    
+            
+            y_Schrodinger = tf.reduce_mean(tf.square(f_u_pred)) + \
+                           tf.reduce_mean(tf.square(f_v_pred))
+
+            y_boundary = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + \
+                         tf.reduce_mean(tf.square(v_lb_pred - v_ub_pred)) + \
+                         tf.reduce_mean(tf.square(u_x_lb_pred - u_x_ub_pred)) + \
+                         tf.reduce_mean(tf.square(v_x_lb_pred - v_x_ub_pred))
+
+            y_supervised = tf.reduce_mean(tf.square(u0 - u0_pred)) + \
+                           tf.reduce_mean(tf.square(v0 - v0_pred))
+
+            return y_Schrodinger + y_boundary + y_supervised
+        
+        return loss
+
 #%%
 
     ########################################
@@ -105,16 +149,13 @@ if __name__ == "__main__":
 
     model = NN.neural_net(ub, lb)
 
-    n_iterations = 50  # Number of training steps 
+    n_iterations = 10  # Number of training steps 
     
     # Optimizer and loss
     
     optimizer = tf.keras.optimizers.Adam()
     
-    def loss():
-        x_pred = model(x)
-        y = tf.reduce_mean(x_pred)
-        return y
+    loss = create_loss(x_lb, t_lb, x_ub, t_ub, x_f, t_f, u0, v0)
 
     # Training
     
@@ -126,8 +167,8 @@ if __name__ == "__main__":
     print('Training time: %.4f' % (elapsed))
             
     # final prediction
-#    u_pred, v_pred, f_u_pred, f_v_pred = model(X_star)
-    u_pred, v_pred = model(X_star)    
+    u_pred, v_pred = model(X_star)
+    f_u_pred, f_v_pred = net_f_uv(X_star[:,0:1], X_star[:,1:2])    
     h_pred = np.sqrt(u_pred**2 + v_pred**2)
                 
     # final error
