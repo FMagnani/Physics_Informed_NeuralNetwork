@@ -19,18 +19,31 @@ import tensorflow as tf
     
 # Access to model guaranteed
 # Data needed: input and their labels for prediction, iterations, optimizer
-def train_step(x0, t0, u0, v0, n_iterations, optimizer):
-    
+def train_step(x0,t0, u0,v0, n_iterations, optimizer):
+        
     with tf.GradientTape() as tape:
         
-        loss_value = loss(u0,v0, model(x0,t0))
-    
-    grads = tape.gradients(loss_value, model.trainable.variables)
+        loss_value = loss(x0,t0, u0,v0)
+ 
+    grads = tape.gradient(loss_value, model.trainable_variables)
     
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
 
+def loss(x0,t0, u0,v0):
+    
+    # Loss from supervised learning (at t=0)
+    X0 = tf.stack([x0, t0], axis=1)
+    u_pred, v_pred = model(X0)
+    y0 = tf.reduce_mean(tf.square(u0 - u_pred)) + \
+         tf.reduce_mean(tf.square(v0 - v_pred))
+    
+    # Loss from Schrodinger constraint (at the anchor pts)
+    f_u, f_v = net_f_uv()
+    yS = tf.reduce_mean(tf.square(f_u)) + \
+          tf.reduce_mean(tf.square(f_v))
 
+    return y0 + yS
 
 # def net_uv(x, t):
     
