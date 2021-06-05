@@ -85,7 +85,8 @@ if __name__ == "__main__":
                    
     # Recap
     
-    # Initial condition pts
+    # Initial condition pts - the real supervised learning pts
+    # Their 'labels' are u0, v0
     # shape = (N0,1)
     x0 = X0[:,0:1]
     t0 = X0[:,1:2]
@@ -108,6 +109,8 @@ if __name__ == "__main__":
     # Conversion to tensors. Recall to WATCH inside a tape
     x0 = tf.convert_to_tensor(x0[:,0])
     t0 = tf.convert_to_tensor(t0[:,0])
+    u0 = tf.convert_to_tensor(u0[:,0])
+    v0 = tf.convert_to_tensor(v0[:,0])
     x_lb = tf.convert_to_tensor(x_lb[:,0])
     t_lb = tf.convert_to_tensor(t_lb[:,0])
     x_ub = tf.convert_to_tensor(x_ub[:,0])
@@ -115,38 +118,7 @@ if __name__ == "__main__":
     x_f = tf.convert_to_tensor(x_f[:,0])
     t_f = tf.convert_to_tensor(t_f[:,0])
     
-    
-#%%
-
-    def create_loss(x_lb, t_lb, x_ub, t_ub, x_f, t_f, u0, v0):
-                
-        def loss():
-
-            X = tf.concat([x0,t0],1)
-            
-            u0_pred, v0_pred = model(X)
-                
-            u_lb_pred, v_lb_pred, u_x_lb_pred, v_x_lb_pred = net_uv(x_lb, t_lb)
-            u_ub_pred, v_ub_pred, u_x_ub_pred, v_x_ub_pred = net_uv(x_ub, t_ub)
-
-            f_u_pred, f_v_pred = net_f_uv(x_f, t_f)
-    
-            
-            y_Schrodinger = tf.reduce_mean(tf.square(f_u_pred)) + \
-                           tf.reduce_mean(tf.square(f_v_pred))
-
-            y_boundary = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + \
-                         tf.reduce_mean(tf.square(v_lb_pred - v_ub_pred)) + \
-                         tf.reduce_mean(tf.square(u_x_lb_pred - u_x_ub_pred)) + \
-                         tf.reduce_mean(tf.square(v_x_lb_pred - v_x_ub_pred))
-
-            y_supervised = tf.reduce_mean(tf.square(u0 - u0_pred)) + \
-                           tf.reduce_mean(tf.square(v0 - v0_pred))
-
-            return y_Schrodinger + y_boundary + y_supervised
-        
-        return loss
-
+   
 #%%
 
     ########################################
@@ -166,14 +138,14 @@ if __name__ == "__main__":
     
     start_time = time.time()    
     #Train step
-#    for _ in tqdm(range(n_iterations)):
-#        train_step( ... )
+    for _ in tqdm(range(n_iterations)):
+        train_step(x0,t0, u0,v0, n_iterations, optimizer)
     elapsed = time.time() - start_time                
     print('Training time: %.4f' % (elapsed))
             
 ##### final prediction
     u_pred, v_pred = model(X_star)
-    f_u_pred, f_v_pred = net_f_uv(X_star[:,0:1], X_star[:,1:2])    
+    f_u_pred, f_v_pred = net_f_uv()    
     h_pred = np.sqrt(u_pred**2 + v_pred**2)
                 
 ##### final error
