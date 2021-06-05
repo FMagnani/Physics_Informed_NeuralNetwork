@@ -120,108 +120,12 @@ if __name__ == "__main__":
    
 #%%
 
-# Train step:
-    # - Compute the loss (watching)
-    # - Compute the gradient of the loss wrt the model weights (trainable vars)
-    # - Apply the gradients (optimizer does)
-    
-def train_step(x0,t0, u0,v0, n_iterations, optimizer):
-        
-    with tf.GradientTape() as tape:
-        
-        loss_value = loss(x0,t0, u0,v0)
- 
-    grads = tape.gradient(loss_value, model.trainable_variables)
-    
-    optimizer.apply_gradients(zip(grads, model.trainable_variables))
-
-
-def loss(x0,t0, u0,v0):
-    
-    # Loss from supervised learning (at t=0)
-    X0 = tf.stack([x0, t0], axis=1)
-    u_pred, v_pred = model(X0)
-    y0 = tf.reduce_mean(tf.square(u0 - u_pred)) + \
-         tf.reduce_mean(tf.square(v0 - v_pred))
-    
-    # Loss from Schrodinger constraint (at the anchor pts)
-    f_u, f_v = net_f_uv()
-    yS = tf.reduce_mean(tf.square(f_u)) + \
-          tf.reduce_mean(tf.square(f_v))
-          
-    # Loss from boundary conditions
-    u_lb_pred, v_lb_pred, u_x_lb_pred, v_x_lb_pred = net_uv(x_lb, t_lb)
-    u_ub_pred, v_ub_pred, u_x_ub_pred, v_x_ub_pred = net_uv(x_ub, t_ub)
-    
-    yB = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + \
-         tf.reduce_mean(tf.square(v_lb_pred - v_ub_pred)) + \
-         tf.reduce_mean(tf.square(u_x_lb_pred - u_x_ub_pred)) + \
-         tf.reduce_mean(tf.square(v_x_lb_pred - v_x_ub_pred))
-    
-
-    return y0 + yS + yB
-
-
-
-def net_uv(x, t):
-    
-    with tf.GradientTape(persistent=True) as tape:
-        
-        tape.watch(x)
-        tape.watch(t)
-        X = tf.stack([x, t], axis=1) # shape = (N_f,2)
-        
-        u, v = model(X)
-         
-    u_x = tape.gradient(u, x)
-    v_x = tape.gradient(v, x)
-
-    return u, v, u_x, v_x
-
-
-
-def create_net_f_uv(x_f, t_f):
-    
-    # NEEDS ACCESS TO MODEL
-    def net_f_uv():
-        
-        with tf.GradientTape(persistent=True) as tape:
-            
-            tape.watch(x_f)
-            tape.watch(t_f)
-            X_f = tf.stack([x_f, t_f], axis=1) # shape = (N_f,2)
-            
-            u, v = model(X_f)
-                
-            u_x = tape.gradient(u, x_f)
-            v_x = tape.gradient(v, x_f)
-            
-        u_t = tape.gradient(u, t_f)
-        v_t = tape.gradient(v, x_f)        
-            
-        u_xx = tape.gradient(u_x, x_f)
-        v_xx = tape.gradient(v_x, x_f)
-    
-        del tape
-    
-        f_u = u_t + 0.5*v_xx + (u**2 + v**2)*v    
-        f_v = v_t - 0.5*u_xx - (u**2 + v**2)*u   
-    
-        return f_u, f_v
-
-    return net_f_uv
-
-
-#%%
-
     ########################################
     ##   MODEL TRAINING AND PREDICTION    ##
     ########################################
 
     # This is a GLOBAL VARIABLE to which every function has access
-    model = NN.neural_net(ub, lb)
-
-    net_f_uv = create_net_f_uv(x_f, t_f)
+    model = NN.Schrodinger_PINN(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
 
     n_iterations = 2  # Number of training steps 
     
@@ -233,16 +137,12 @@ def create_net_f_uv(x_f, t_f):
     start_time = time.time()    
     #Train step
     for _ in tqdm(range(n_iterations)):
-        train_step(x0,t0, u0,v0, n_iterations, optimizer)
+        model.train_step(n_iterations, optimizer)
     elapsed = time.time() - start_time                
     print('Training time: %.4f' % (elapsed))
             
 ##### final prediction
-    net_f_uv = create_net_f_uv(X_star[:,0], X_star[:,1])
-    
-    u_pred, v_pred = model(X_star)
-    f_u_pred, f_v_pred = net_f_uv()    
- 
+    u_pred, v_pred, f_u_pred, f_v_pred = model.predict(X_star[:,0], X_star[:,1])
     h_pred = np.sqrt(u_pred**2 + v_pred**2)
                 
 ##### final error
@@ -264,12 +164,12 @@ def create_net_f_uv(x_f, t_f):
     ############################# Plotting ###############################
     ######################################################################    
     
-    U_pred = griddata(X_star, tf.reshape(u_pred, [-1]), (X, T), method='cubic')
-    V_pred = griddata(X_star, tf.reshape(v_pred, [-1]), (X, T), method='cubic')
+    # U_pred = griddata(X_star, tf.reshape(u_pred, [-1]), (X, T), method='cubic')
+    # V_pred = griddata(X_star, tf.reshape(v_pred, [-1]), (X, T), method='cubic')
     H_pred = griddata(X_star, tf.reshape(h_pred, [-1]), (X, T), method='cubic')
 
-    FU_pred = griddata(X_star, f_u_pred, (X, T), method='cubic')
-    FV_pred = griddata(X_star, f_v_pred, (X, T), method='cubic')     
+    # FU_pred = griddata(X_star, f_u_pred, (X, T), method='cubic')
+    # FV_pred = griddata(X_star, f_v_pred, (X, T), method='cubic')     
     
     
     X0 = tf.stack([x0,0*x0],axis=1) # (x0, 0)
@@ -303,7 +203,7 @@ def create_net_f_uv(x_f, t_f):
     
     ax1.set_xlabel('$t$')
     ax1.set_ylabel('$x$')
-    leg = ax1.legend(frameon=False, loc = 'best')
+#    leg = ax1.legend(frameon=False, loc = 'best')
 #    plt.setp(leg.get_texts(), color='w')
     ax1.set_title('$|h(t,x)|$', fontsize = 10)
     
