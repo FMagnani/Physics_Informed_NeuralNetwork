@@ -33,16 +33,13 @@ if __name__ == "__main__":
     np.random.seed(1234)
     tf.random.set_seed(1234)
     
-    # use float64 by default
-    tf.keras.backend.set_floatx("float64")
-    
     # Domain bounds
     lb = np.array([-5.0, 0.0])
     ub = np.array([5.0, np.pi/2])
 
     N0 = 50     # Number of training pts from x=0
     N_b = 50    # Number of training pts from the boundaries
-    N_f = 20000 # Number of training pts from the inside
+    N_f = 20000 # Number of training pts from the inside - anchor pts
 
     ########################################
     ##   DATA PREPARATION                 ##
@@ -59,15 +56,16 @@ if __name__ == "__main__":
     Exact_v = np.imag(Exact)
     Exact_h = np.sqrt(Exact_u**2 + Exact_v**2)
     
-    # Disretization of the domain
+    # Creation of the 2D domain
     X, T = np.meshgrid(x,t)
     
+    # The whole domain flattened, on which the final prediction will be made
     X_star = np.hstack((X.flatten()[:,None], T.flatten()[:,None]))
     u_star = Exact_u.T.flatten()[:,None]
     v_star = Exact_v.T.flatten()[:,None]
     h_star = Exact_h.T.flatten()[:,None]
     
-    # Choose N0 training points from x and the corresponding u, v
+    # Choose N0 training points from x and the corresponding u, v at t=0
     idx_x = np.random.choice(x.shape[0], N0, replace=False)
     x0 = x[idx_x,:]
     u0 = Exact_u[idx_x,0:1]
@@ -80,35 +78,43 @@ if __name__ == "__main__":
     # Latin Hypercube Sampling of N_f points from the interior domain
     X_f = lb + (ub-lb)*lhs(2, N_f)
 
-    # Locations on the domain of the boundary training points
+    # 2D locations on the domain of the boundary training points
     X0 = np.concatenate((x0, 0*x0), 1) # (x0, 0)
     X_lb = np.concatenate((0*tb + lb[0], tb), 1) # (lb[0], tb)
     X_ub = np.concatenate((0*tb + ub[0], tb), 1) # (ub[0], tb)
-                       
+                   
+    # Recap
+    
+    # Initial condition pts
+    # shape = (N0,1)
     x0 = X0[:,0:1]
     t0 = X0[:,1:2]
 
+    # Boundary pts used for constraint
+    # shape = (N_b,1)
     x_lb = X_lb[:,0:1]
     t_lb = X_lb[:,1:2]
 
     x_ub = X_ub[:,0:1]
     t_ub = X_ub[:,1:2]
         
+    # Anchor pts for supervised learning
+    # shape = (N_f,1)
     x_f = X_f[:,0:1]
     t_f = X_f[:,1:2]    
-
-    # Casting to float32, the output dtype of the predictions
-    # x0 = tf.cast(x0, dtype='float32')
-    # t0 = tf.cast(x0, dtype='float32')
-    # x_lb = tf.cast(x_lb, dtype='float32')
-    # t_lb = tf.cast(t_lb, dtype='float32')
-    # x_ub = tf.cast(x_ub, dtype='float32')
-    # t_ub = tf.cast(t_ub, dtype='float32')
-    # x_f = tf.cast(x_f, dtype='float32')
-    # t_f = tf.cast(t_f, dtype='float32')
-    # u0 = tf.cast(u0, dtype='float32')
-    # v0 = tf.cast(v0, dtype='float32')
-
+    
+    # All these are numpy.ndarray with dtype float64
+    
+    # Conversion to tensors. Recall to WATCH inside a tape
+    x0 = tf.convert_to_tensor(x0[:,0])
+    t0 = tf.convert_to_tensor(t0[:,0])
+    x_lb = tf.convert_to_tensor(x_lb[:,0])
+    t_lb = tf.convert_to_tensor(t_lb[:,0])
+    x_ub = tf.convert_to_tensor(x_ub[:,0])
+    t_ub = tf.convert_to_tensor(t_ub[:,0])
+    x_f = tf.convert_to_tensor(x_f[:,0])
+    t_f = tf.convert_to_tensor(t_f[:,0])
+    
     
 #%%
 
@@ -147,31 +153,30 @@ if __name__ == "__main__":
     ##   MODEL TRAINING AND PREDICTION    ##
     ########################################
 
+    # This is a GLOBAL VARIABLE to which every function has access
     model = NN.neural_net(ub, lb)
 
     n_iterations = 10  # Number of training steps 
     
-    # Optimizer and loss
-    
+##### Optimizer and loss    
     optimizer = tf.keras.optimizers.Adam()
-    
-    loss = create_loss(x_lb, t_lb, x_ub, t_ub, x_f, t_f, u0, v0)
+#    loss = create_loss(x_lb, t_lb, x_ub, t_ub, x_f, t_f, u0, v0)
 
-    # Training
+##### Training
     
     start_time = time.time()    
     #Train step
-    for _ in tqdm(range(n_iterations)):
-        optimizer.minimize(loss, model.trainable_variables)
+#    for _ in tqdm(range(n_iterations)):
+#        train_step( ... )
     elapsed = time.time() - start_time                
     print('Training time: %.4f' % (elapsed))
             
-    # final prediction
+##### final prediction
     u_pred, v_pred = model(X_star)
     f_u_pred, f_v_pred = net_f_uv(X_star[:,0:1], X_star[:,1:2])    
     h_pred = np.sqrt(u_pred**2 + v_pred**2)
                 
-    # final error
+##### final error
     u_pred = tf.reshape(u_pred, shape=(51456,1))
     v_pred = tf.reshape(v_pred, shape=(51456,1))
     h_pred = tf.reshape(h_pred, shape=(51456,1))
