@@ -12,54 +12,46 @@ import tensorflow as tf
 
 #%%    
 
-def net_uv(x, t):
+# def net_uv(x, t):
     
-    X = tf.concat([x,t],1)
-    X = tf.Variable(X)
+#     X = tf.concat([x,t],1)
+#     X = tf.Variable(X)
     
-    with tf.GradientTape(persistent=True) as tape:
-        u, v = model(X)
+#     with tf.GradientTape(persistent=True) as tape:
+#         u, v = model(X)
          
-    u_X = tape.gradient(u, X)
-    v_X = tape.gradient(v, X)
+#     u_X = tape.gradient(u, X)
+#     v_X = tape.gradient(v, X)
 
-    u_x = u_X[:,0:1]
-    v_x = v_X[:,1:2]
+#     u_x = u_X[:,0:1]
+#     v_x = v_X[:,1:2]
 
-    return u, v, u_x, v_x
+#     return u, v, u_x, v_x
 
-def net_f_uv(x, t):
-    """
-   ARGS:
-        NN: The Neural Network used as solution. An instance of neural_net class
-        x, t: Input 
-    RETURNS:
-        f_u, f_v: output of the NN    
-    Used to compute the loss referring to the Shrodinger eq condition.
-    It computes the first time derivatives and the second space derivatives
-    of the solution, represented by 'neural_net'.
-    """
-    
-    X = tf.concat([x,t],1)
-    X = tf.Variable(X) 
-    
-    with tf.GradientTape(persistent=True) as tape_1:
-        with tf.GradientTape(persistent=True) as tape_2:
-            u, v = model(X)
+# That's not a real function, it has no inputs. It simply carry the computation
+# of the derivatives of the neural net model and returns the f_u, f_v values
+# NEEDS ACCESS TO MODEL AND TO X_F, T_F
+def net_f_uv():
+        
+    with tf.GradientTape(persistent=True) as tape:
+        
+        tape.watch(x_f)
+        tape.watch(t_f)
+        X_f = tf.stack([x_f, t_f], axis=1) # shape = (N_f,2)
+        
+        # Prediction, watched
+        u, v = model(X_f)
             
-            u_X = tape_2.gradient(u, X)
-            v_X = tape_2.gradient(v, X)
+        u_x = tape.gradient(u, x_f)
+        v_x = tape.gradient(v, x_f)
 
-    u_t = u_X[:,1]        
-    v_t = v_X[:,1]        
+    u_t = tape.gradient(u, t_f)
+    v_t = tape.gradient(v, x_f)        
     
-    u_xx = tape_1.gradient(u_X, X)[:,0]
-    v_xx = tape_1.gradient(v_X, X)[:,0]
+    u_xx = tape.gradient(u_x, x_f)
+    v_xx = tape.gradient(v_x, x_f)
     
-    # u_t = tf.cast(u_t, dtype='float32')
-    # v_t = tf.cast(u_t, dtype='float32')
-    # u_xx = tf.cast(u_xx, dtype='float32')
-    # v_xx = tf.cast(v_xx, dtype='float32')
+    del tape
     
     f_u = u_t + 0.5*v_xx + (u**2 + v**2)*v    
     f_v = v_t - 0.5*u_xx - (u**2 + v**2)*u   
