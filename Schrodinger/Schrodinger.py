@@ -15,7 +15,6 @@ import time
 from tqdm import tqdm
 
 import NeuralNets as NN
-from Utilities import net_uv, net_f_uv
 
 #Plotting
 import matplotlib.pyplot as plt
@@ -180,10 +179,10 @@ if __name__ == "__main__":
     FV_pred = griddata(X_star, f_v_pred, (X, T), method='cubic')     
     
     
-    X0 = np.concatenate((x0, 0*x0), 1) # (x0, 0)
-    X_lb = np.concatenate((0*tb + lb[0], tb), 1) # (lb[0], tb)
-    X_ub = np.concatenate((0*tb + ub[0], tb), 1) # (ub[0], tb)
-    X_u_train = np.vstack([X0, X_lb, X_ub])
+    X0 = tf.stack([x0,0*x0],axis=1) # (x0, 0)
+    X_lb = tf.stack([0*tb + lb[0], tb], axis=1) # (lb[0], tb)
+    X_ub = tf.stack([0*tb + ub[0], tb], axis=1) # (ub[0], tb)
+    X_u_train = np.vstack([X0, X_lb[:,:,0], X_ub[:,:,0]])
 
     
 
@@ -255,25 +254,4 @@ if __name__ == "__main__":
     ax.set_title('$t = %.2f$' % (t[125]), fontsize = 10)
     
     
-
-#%%
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
