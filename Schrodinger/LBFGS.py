@@ -12,7 +12,7 @@ Created on Sat Jun  5 21:55:43 2021
 # from https://github.com/yaroslavvb/stuff/blob/master/eager_lbfgs/eager_lbfgs.py
 
 import tensorflow as tf
-#import numpy as np
+import numpy as np
 import time
 import types
 
@@ -52,8 +52,6 @@ def lbfgs(opfunc, x, config, state):
   """port of lbfgs.lua, using TensorFlow eager mode.
   """
   
-  print(config.maxIter)
-  
   if config.maxIter == 0:
     return
 
@@ -75,7 +73,7 @@ def lbfgs(opfunc, x, config, state):
   else:
     verbose = lambda x: None
 
-    # evaluate initial f(x) and df/dx
+  # evaluate initial f(x) and df/dx
   f, g = opfunc(x)
 
   f_hist = [f]
@@ -92,10 +90,10 @@ def lbfgs(opfunc, x, config, state):
   # optimize for a max of maxIter iterations
   nIter = 0
   times = []
+  start_time = time.time()
   while nIter < maxIter:
-    
-    if (nIter):  
-        print('Iter no:',nIter,'\n time of iteration:', time.time()-start_time())
+
+    print('iteration number:', nIter, 'time elapsed:',start_time-time.time())
       
     start_time = time.time()
     
