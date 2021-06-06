@@ -21,8 +21,9 @@ class neural_net(tf.keras.Model):
     def __init__(self, ub, lb, hidden_dim=100):
         super(neural_net, self).__init__()
         
-        self.layers_list = [2, 100, 100, 100, 100, 2]
-        self.output_type = 'float64'
+#        self.layers_list = [2, 100, 100, 100, 100, 2]
+       
+        tf.keras.backend.set_floatx('float64')
         
         self.lb = lb
         self.ub = ub
@@ -43,8 +44,7 @@ class neural_net(tf.keras.Model):
                     bias_initializer="zeros")
 
         self.last_layer = Dense(self.out_dim,
-                    bias_initializer="zeros",
-                    dtype = self.output_type)
+                    bias_initializer="zeros")
 
     def call(self, X):
         
@@ -204,72 +204,47 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
     def __init__(self, x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, hidden_dim=100):
         super(Schrod_PINN_LBFGS, self).__init__(x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, hidden_dim)
     
-        # Setting up the quasi-newton LBGFS optimizer 
-        # (set nt_epochs=0 to cancel it)
-        self.nt_epochs = 2000
+        # Setting up the LBFGS optimizer (set nt_epochs=0 to cancel it)
         self.nt_config = Struct()
-        self.nt_config.learningRate = 0.8
-        self.nt_config.maxIter = self.nt_epochs
+        self.nt_config.learningRate = 1.2
+        self.nt_config.maxIter = 500
         self.nt_config.nCorrection = 50
         self.nt_config.tolFun = 1.0 * np.finfo(float).eps
-        
+   
+        # Setting up the TF SGD-based optimizer (set tf_epochs=0 to cancel it)
+        # self.tf_epochs = 200
+        # self.tf_optimizer = tf.keras.optimizers.Adam()
+
+        # Building the model with a test input, in order to inizialize weights
+        test_input = tf.stack([self.x0,self.t0],axis=1)
+        self.model(test_input)
+
         # Computing the sizes of weights/biases for future decomposition
         self.sizes_w = []
         self.sizes_b = []
-        # layers is something like [2, 100, 100, 100, 100, 2]
-#        for i, width in enumerate(layers):
-        for i, width in enumerate([2, 100, 100, 100, 100, 2]):    
-            if i != 1:
-#                self.sizes_w.append(int(width * layers[1]))
-#                self.sizes_b.append(int(width if i != 0 else layers[1]))
-                self.sizes_w.append(int(width * 100))
-                self.sizes_b.append(int(width if i != 0 else 100))
-    
-    def train(self, n_iterations, optimizer=tf.keras.optimizers.Adam()):
-        
-        start_time = time.time()    
-        #Train step
-        for _ in tqdm(range(n_iterations)):
-            self.train_step(optimizer)
-        elapsed = time.time() - start_time                
-        print('Training time: %.4f' % (elapsed))
-    
-        def loss_and_flat_grad(w):
-    
-            with tf.GradientTape() as tape:
-                self.set_weights(w)
-            
-                loss_value = self.loss(self.x0,self.t0, self.u0,self.v0)
-            
-            grad = tape.gradient(loss_value, self.model.trainable_variables)
-            grad_flat = []
-            for g in grad:
-                grad_flat.append(tf.reshape(g, [-1]))
+        # for i, width in enumerate(self.model.layers):
+        #     if i != 1:
+        #         self.sizes_w.append(int(width * self.model.layers[1]))
+        #         self.sizes_b.append(int(width if i != 0 else self.model.layers[1]))
+        for l in self.model.layers:
+            w = l.get_weights()[0]
+            b = l.get_weights()[1]
+            self.sizes_w.append( np.shape(w)[0] * np.shape(w)[1] )
+            self.sizes_b.append( np.shape(b)[0] )
 
-            # MY ADDITION
-            grad_flat = tf.cast(grad_flat, dtype='float32')
 
-            grad_flat =  tf.concat(grad_flat, 0)
-            
-            return loss_value, grad_flat
-    
-        lbfgs(loss_and_flat_grad,
-              self.get_weights(),
-              self.nt_config, Struct())
-
-    
-    
-    def get_weights(self):    
+    def get_weights(self, convert_to_tensor=True):
         w = []
-        
 #        for layer in self.model.layers[1:]:
-        for layer in self.model.layers:   
+        for layer in self.model.layers:
             weights_biases = layer.get_weights()
             weights = weights_biases[0].flatten()
             biases = weights_biases[1]
             w.extend(weights)
             w.extend(biases)
-        return tf.convert_to_tensor(w, dtype='float32')
+        if convert_to_tensor:
+            w = tf.convert_to_tensor(w)
+        return w
 
     def set_weights(self, w):
 #        for i, layer in enumerate(self.model.layers[1:]):
@@ -284,22 +259,41 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
             layer.set_weights(weights_biases)
 
 
+    def loss_and_flat_grad(self, w):
+        with tf.GradientTape() as tape:
+            self.set_weights(w)
+            loss_value = self.loss(self.x0,self.t0, self.u0,self.v0)
+        grad = tape.gradient(loss_value, self.model.trainable_variables)
+        grad_flat = []
+        for g in grad:
+            grad_flat.append(tf.reshape(g, [-1]))
+        grad_flat = tf.concat(grad_flat, 0)
+        return loss_value, grad_flat
 
+        
+    def nt_optimization(self, x0,t0, u0,v0):
+        # tfp.optimizer.lbfgs_minimize(
+        #   loss_and_flat_grad,
+        #   initial_position=self.get_weights(),
+        #   num_correction_pairs=nt_config.nCorrection,
+        #   max_iterations=nt_config.maxIter,
+        #   f_relative_tolerance=nt_config.tolFun,
+        #   tolerance=nt_config.tolFun,
+        #   parallel_iterations=6)
+        self.nt_optimization_steps(self.loss_and_flat_grad)
 
+    def nt_optimization_steps(self, loss_and_flat_grad):
+        lbfgs(loss_and_flat_grad,
+              self.get_weights(),
+              self.nt_config, Struct())
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def train(self, n_iterations, optimizer=tf.keras.optimizers.Adam()):
+            
+        # ADAM training
+        super(Schrod_PINN_LBFGS, self).train(n_iterations)
+            
+        # LBFGS trainig
+        self.nt_optimization(self.x0,self.t0, self.u0,self.v0)
 
 
 
