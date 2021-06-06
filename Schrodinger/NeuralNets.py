@@ -12,14 +12,14 @@ from tensorflow.keras.layers import Dense
 import time
 from tqdm import tqdm
 import numpy as np
-from tfp_LBFGS import function_factory
+from LBFGS import lbfgs
 import scipy.optimize
 
 #%%
 
-class neural_net(tf.keras.Model):
+class neural_net(tf.keras.Sequential):
     
-    def __init__(self, ub, lb, hidden_dim=100):
+    def __init__(self, ub, lb, layers):
         super(neural_net, self).__init__()
         
 #        self.layers_list = [2, 100, 100, 100, 100, 2]
@@ -29,40 +29,19 @@ class neural_net(tf.keras.Model):
         self.lb = lb
         self.ub = ub
 
-        self.hidden_dim = hidden_dim
-        self.out_dim = 2
+        self.model.add(tf.keras.layers.InputLayer(input_shape=(layers[0],)))
+
+        self.model.add(tf.keras.layers.Lambda(
+                        lambda X: 2.0*(X-self.lb)/(self.ub-self.lb)-1.0))
+
+        for width in layers[1:-1]:
+            self.model.add(tf.keras.layers.Dense(
+                width, activation=tf.nn.tanh,
+                kernel_initializer="glorot_normal"))
         
-        self.hidden_1 = Dense(self.hidden_dim, activation='tanh',
-                    bias_initializer="zeros")
-
-        self.hidden_2 = Dense(self.hidden_dim, activation='tanh',
-                    bias_initializer="zeros")
-
-        self.hidden_3 = Dense(self.hidden_dim, activation='tanh',
-                    bias_initializer="zeros")
-
-        self.hidden_4 = Dense(self.hidden_dim, activation='tanh',
-                    bias_initializer="zeros")
-
-        self.last_layer = Dense(self.out_dim,
-                    bias_initializer="zeros")
-
-    def call(self, X):
-        
-        H = 2.0*(X - self.lb)/(self.ub - self.lb) - 1.0
-
-        H = self.hidden_1(H)
-        H = self.hidden_2(H)
-        H = self.hidden_3(H)
-        H = self.hidden_4(H)
-        
-        H = self.last_layer(H)
-    
-        u = H[:,0]
-        v = H[:,1]
-    
-        return u, v
-
+        self.model.add(tf.keras.layers.Dense(
+                layers[-1], activation=None,
+                kernel_initializer="glorot_normal"))
 
 
 class Schrodinger_PINN():
@@ -198,6 +177,7 @@ class Schrodinger_PINN():
         return u, v, f_u, f_v
 
 
+#%%
 
 
 class Schrod_PINN_LBFGS(Schrodinger_PINN):
