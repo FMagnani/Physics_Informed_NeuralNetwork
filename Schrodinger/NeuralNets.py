@@ -8,12 +8,10 @@ Created on Fri Jun  4 18:41:40 2021
 """
 
 import tensorflow as tf
-from tensorflow.keras.layers import Dense
 import time
 from tqdm import tqdm
 import numpy as np
-from LBFGS import lbfgs
-import scipy.optimize
+from LBFGS import lbfgs, Struct
 
 #%%
 
@@ -29,17 +27,17 @@ class neural_net(tf.keras.Sequential):
         self.lb = lb
         self.ub = ub
 
-        self.model.add(tf.keras.layers.InputLayer(input_shape=(layers[0],)))
+        self.add(tf.keras.layers.InputLayer(input_shape=(layers[0],)))
 
-        self.model.add(tf.keras.layers.Lambda(
+        self.add(tf.keras.layers.Lambda(
                         lambda X: 2.0*(X-self.lb)/(self.ub-self.lb)-1.0))
 
         for width in layers[1:-1]:
-            self.model.add(tf.keras.layers.Dense(
+            self.add(tf.keras.layers.Dense(
                 width, activation=tf.nn.tanh,
                 kernel_initializer="glorot_normal"))
         
-        self.model.add(tf.keras.layers.Dense(
+        self.add(tf.keras.layers.Dense(
                 layers[-1], activation=None,
                 kernel_initializer="glorot_normal"))
 
@@ -55,19 +53,19 @@ class neural_net(tf.keras.Sequential):
 
     def get_weights(self, convert_to_tensor=True):
         w = []
-        for layer in self.model.layers[1:]:
+        for layer in self.layers[1:]:
             weights_biases = layer.get_weights()
             weights = weights_biases[0].flatten()
             biases = weights_biases[1]
             w.extend(weights)
             w.extend(biases)
         if convert_to_tensor:
-            w = self.tf.convert_to_tensor(w)
+            w = tf.convert_to_tensor(w)
         return w
 
 
     def set_weights(self, w):
-        for i, layer in enumerate(self.model.layers[1:]):
+        for i, layer in enumerate(self.layers[1:]):
             start_weights = sum(self.sizes_w[:i]) + sum(self.sizes_b[:i])
             end_weights = sum(self.sizes_w[:i+1]) + sum(self.sizes_b[:i])
             weights = w[start_weights:end_weights]
@@ -78,12 +76,23 @@ class neural_net(tf.keras.Sequential):
             layer.set_weights(weights_biases)
 
 
+class neural_net_2out(neural_net):
+    
+    def __init__(self, ub, lb, layers):
+        super(neural_net_2out, self).__init__(ub, lb, layers)
+
+    def call(self, inputs):
+        output = super(neural_net_2out, self).call(inputs)
+        
+        return output[:,0], output[:,1]
+
+
 
 class Schrodinger_PINN():
     
-    def __init__(self, x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, hidden_dim=100):
+    def __init__(self, x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, layers):
         
-        self.model = neural_net(ub, lb, hidden_dim)        
+        self.model = neural_net_2out(ub, lb, layers)        
         
         self.x0 = x0
         self.t0 = 0*x0
@@ -217,14 +226,21 @@ class Schrodinger_PINN():
 
 class Schrod_PINN_LBFGS(Schrodinger_PINN):
     
-    def __init__(self, x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, hidden_dim=100):
-        super(Schrod_PINN_LBFGS, self).__init__(x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, hidden_dim)
+    def __init__(self, x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, layers):
+        super(Schrod_PINN_LBFGS, self).__init__(x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, layers)
+    
+        # Setting up the optimizers with the hyper-parameters
+        self.nt_config = Struct()
+        self.nt_config.learningRate = 1.2
+        self.nt_config.maxIter = 50
+        self.nt_config.nCorrection = 50
+        self.nt_config.tolFun = 1.0 * np.finfo(float).eps
     
 
     def train(self, ADAM_iterations, LBFGS_max_iterations=500, optimizer=tf.keras.optimizers.Adam()):
             
         # ADAM training
-#        super(Schrod_PINN_LBFGS, self).train(ADAM_iterations)
+        super(Schrod_PINN_LBFGS, self).train(ADAM_iterations)
             
         # LBFGS trainig
         self.LBFGS_training(LBFGS_max_iterations)
@@ -232,25 +248,26 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
 
     def LBFGS_training(self, max_iterations):
         
-        # the function passed to L-BFGS solver
-        func = function_factory(self.model, self.loss, self.x0,self.t0, self.u0,self.v0)
+        self.nt_config.maxIter = max_iterations
         
-        # convert initial model parameters to a 1D tf.Tensor
-        init_params = tf.dynamic_stitch(func.idx, self.model.trainable_variables)
+        lbfgs(self.loss_and_flat_grad,
+              self.model.get_weights(),
+              self.nt_config, Struct())
+        
     
-        # train the model with L-BFGS solver
-        results = scipy.optimize.minimize(
-                    fun=func, x0=init_params, jac=True, 
-                    method='L-BFGS-B')
+    def loss_and_flat_grad(self, w):
         
-        # results = tfp.optimizer.lbfgs_minimize(
-        #             value_and_gradients_function=func, 
-        #             initial_position=init_params, 
-        #             max_iterations=max_iterations)
+        with tf.GradientTape() as tape:
+            self.model.set_weights(w)
+            loss_value = self.loss(self.x0,self.t0, self.u0,self.v0)
+        grad = tape.gradient(loss_value, self.model.trainable_variables)
+        grad_flat = []
+        for g in grad:
+            grad_flat.append(tf.reshape(g, [-1]))
+        grad_flat = tf.concat(grad_flat, 0)
+        return loss_value, grad_flat
 
-        # after training, the final optimized parameters are still in results.position
-        # so we have to manually put them back to the model
-        func.assign_new_model_parameters(results.position)        
+    
     
     
     

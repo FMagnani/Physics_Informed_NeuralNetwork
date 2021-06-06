@@ -93,7 +93,7 @@ def lbfgs(opfunc, x, config, state):
   start_time = time.time()
   while nIter < maxIter:
 
-    print('iteration number:', nIter, 'time elapsed:',start_time-time.time())
+    print('iteration', nIter, '; ',start_time-time.time(),' sec/it:')
       
     start_time = time.time()
     

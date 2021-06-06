@@ -116,10 +116,12 @@ if __name__ == "__main__":
     t_f = tf.convert_to_tensor(t_f[:,0])
     X_star = tf.convert_to_tensor(X_star)
 
-    model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
+
+    layers = [2,100,100,100,100,2]
+    model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb, layers)
 
     # Inizialize weights
-    model.model(tf.stack([x0,t0],axis=1))
+#    model.model(tf.stack([x0,t0],axis=1))
     
 #%%
 
@@ -128,7 +130,7 @@ if __name__ == "__main__":
     ########################################
 
     adam_iterations = 1  # Number of training steps 
-    lbfgs_max_iterations = 10
+    lbfgs_max_iterations = 5 # Max iterations for lbfgs
     
 ##### Training
     model.train(adam_iterations, lbfgs_max_iterations)
