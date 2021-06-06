@@ -1,24 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Copyright © 2019 Pi-Yueh Chuang <pychuang@gwu.edu>
 
-Distributed under terms of the MIT license.
 
-"""
 
 """
-An example of using tfp.optimizer.lbfgs_minimize to optimize a TensorFlow model.
-This code shows a naive way to wrap a tf.keras.Model and optimize it with the L-BFGS
-optimizer from TensorFlow Probability.
-Python interpreter version: 3.6.9
-TensorFlow version: 2.0.0
-TensorFlow Probability version: 0.8.0
-NumPy version: 1.17.2
-Matplotlib version: 3.1.1
-"""
 
-import numpy
+import numpy as np
 import tensorflow as tf
 # import tensorflow_probability as tfp
 # from matplotlib import pyplot
@@ -48,14 +36,14 @@ def function_factory(model, loss, train_x,train_t, train_y_u, train_y_v):
     part = [] # partition indices
 
     for i, shape in enumerate(shapes):
-        n = numpy.product(shape)
+        n = np.product(shape)
         idx.append(tf.reshape(tf.range(count, count+n, dtype=tf.int32), shape))
         part.extend([i]*n)
         count += n
 
     part = tf.constant(part)
 
-    @tf.function
+#    @tf.function
     def assign_new_model_parameters(params_1d):
         """A function updating the model's parameters with a 1D tf.Tensor.
         Args:
@@ -67,7 +55,7 @@ def function_factory(model, loss, train_x,train_t, train_y_u, train_y_v):
             model.trainable_variables[i].assign(tf.reshape(param, shape))
 
     # now create a function that will be returned by this factory
-    @tf.function
+#    @tf.function
     def f(params_1d):
         """A function that can be used by tfp.optimizer.lbfgs_minimize.
         This function is created by function_factory.
@@ -90,12 +78,17 @@ def function_factory(model, loss, train_x,train_t, train_y_u, train_y_v):
 
         # print out iteration & loss
         f.iter.assign_add(1)
-        tf.print("Iter:", f.iter, "loss:", loss_value)
+#        if (f.iter%10==0):
+        if (True):
+           tf.print("Iter:", f.iter, "loss:", loss_value)
 
         # store loss value so we can retrieve later
-        tf.py_function(f.history.append, inp=[loss_value], Tout=[])
+#        tf.py_function(f.history.append, inp=[loss_value], Tout=[])
 
-        return loss_value, grads
+        loss_value_np = loss_value.numpy().astype(np.float64)
+        grads_np = [x.numpy().astype(np.float64)  for x in grads]        
+
+        return loss_value_np, grads_np
 
     # store these information as members so we can use them outside the scope
     f.iter = tf.Variable(0)

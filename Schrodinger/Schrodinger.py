@@ -118,6 +118,8 @@ if __name__ == "__main__":
 
     model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
 
+    # Inizialize weights
+    model.model(tf.stack([x0,t0],axis=1))
     
 #%%
 
@@ -125,11 +127,15 @@ if __name__ == "__main__":
     ##   MODEL TRAINING AND PREDICTION    ##
     ########################################
 
-    n_iterations = 1  # Number of training steps 
+    adam_iterations = 1  # Number of training steps 
+    lbfgs_max_iterations = 10
     
 ##### Training
-    model.train(n_iterations)
-            
+    model.train(adam_iterations, lbfgs_max_iterations)
+
+
+#%%    
+        
 ##### final prediction
     u_pred, v_pred, f_u_pred, f_v_pred = model.predict(X_star[:,0], X_star[:,1])
     h_pred = np.sqrt(u_pred**2 + v_pred**2)

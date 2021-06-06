@@ -13,7 +13,7 @@ import time
 from tqdm import tqdm
 import numpy as np
 from tfp_LBFGS import function_factory
-import tensorflow_probability as tfp
+import scipy.optimize
 
 #%%
 
@@ -209,7 +209,7 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
     def train(self, ADAM_iterations, LBFGS_max_iterations=500, optimizer=tf.keras.optimizers.Adam()):
             
         # ADAM training
-        super(Schrod_PINN_LBFGS, self).train(ADAM_iterations)
+#        super(Schrod_PINN_LBFGS, self).train(ADAM_iterations)
             
         # LBFGS trainig
         self.LBFGS_training(LBFGS_max_iterations)
@@ -224,10 +224,14 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
         init_params = tf.dynamic_stitch(func.idx, self.model.trainable_variables)
     
         # train the model with L-BFGS solver
-        results = tfp.optimizer.lbfgs_minimize(
-                    value_and_gradients_function=func, 
-                    initial_position=init_params, 
-                    max_iterations=max_iterations)
+        results = scipy.optimize.minimize(
+                    fun=func, x0=init_params, jac=True, 
+                    method='L-BFGS-B')
+        
+        # results = tfp.optimizer.lbfgs_minimize(
+        #             value_and_gradients_function=func, 
+        #             initial_position=init_params, 
+        #             max_iterations=max_iterations)
 
         # after training, the final optimized parameters are still in results.position
         # so we have to manually put them back to the model
