@@ -43,6 +43,41 @@ class neural_net(tf.keras.Sequential):
                 layers[-1], activation=None,
                 kernel_initializer="glorot_normal"))
 
+        
+        # Computing the sizes of weights/biases for future decomposition
+        self.sizes_w = []
+        self.sizes_b = []
+        for i, width in enumerate(layers):
+            if i != 1:
+                self.sizes_w.append(int(width * layers[1]))
+                self.sizes_b.append(int(width if i != 0 else layers[1]))
+
+
+    def get_weights(self, convert_to_tensor=True):
+        w = []
+        for layer in self.model.layers[1:]:
+            weights_biases = layer.get_weights()
+            weights = weights_biases[0].flatten()
+            biases = weights_biases[1]
+            w.extend(weights)
+            w.extend(biases)
+        if convert_to_tensor:
+            w = self.tf.convert_to_tensor(w)
+        return w
+
+
+    def set_weights(self, w):
+        for i, layer in enumerate(self.model.layers[1:]):
+            start_weights = sum(self.sizes_w[:i]) + sum(self.sizes_b[:i])
+            end_weights = sum(self.sizes_w[:i+1]) + sum(self.sizes_b[:i])
+            weights = w[start_weights:end_weights]
+            w_div = int(self.sizes_w[i] / self.sizes_b[i])
+            weights = tf.reshape(weights, [w_div, self.sizes_b[i]])
+            biases = w[end_weights:end_weights + self.sizes_b[i]]
+            weights_biases = [weights, biases]
+            layer.set_weights(weights_biases)
+
+
 
 class Schrodinger_PINN():
     
