@@ -51,7 +51,9 @@ times = []
 def lbfgs(opfunc, x, config, state):
   """port of lbfgs.lua, using TensorFlow eager mode.
   """
-
+  
+  print(config.maxIter)
+  
   if config.maxIter == 0:
     return
 
@@ -91,6 +93,10 @@ def lbfgs(opfunc, x, config, state):
   nIter = 0
   times = []
   while nIter < maxIter:
+    
+    if (nIter):  
+        print('Iter no:',nIter,'\n time of iteration:', time.time()-start_time())
+      
     start_time = time.time()
     
     # keep track of nb of iterations
