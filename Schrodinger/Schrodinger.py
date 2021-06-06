@@ -115,15 +115,15 @@ if __name__ == "__main__":
     x_f = tf.convert_to_tensor(x_f[:,0])
     t_f = tf.convert_to_tensor(t_f[:,0])
     X_star = tf.convert_to_tensor(X_star)
-   
+
+    model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
+
+    
 #%%
 
     ########################################
     ##   MODEL TRAINING AND PREDICTION    ##
     ########################################
-
-    # This is a GLOBAL VARIABLE to which every function has access
-    model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb)
 
     n_iterations = 1  # Number of training steps 
     
