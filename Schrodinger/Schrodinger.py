@@ -120,8 +120,6 @@ if __name__ == "__main__":
     layers = [2,100,100,100,100,2]
     model = NN.Schrod_PINN_LBFGS(x0, u0, v0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb, layers)
 
-    # Inizialize weights
-#    model.model(tf.stack([x0,t0],axis=1))
     
 #%%
 
@@ -129,8 +127,11 @@ if __name__ == "__main__":
     ##   MODEL TRAINING AND PREDICTION    ##
     ########################################
 
-    adam_iterations = 1  # Number of training steps 
-    lbfgs_max_iterations = 5 # Max iterations for lbfgs
+    # 500 ADAM + 1000 LBFGS is enough for a quite satisfactory result
+    # Set to 0 the iteration to completely skip that optimization method   
+
+    adam_iterations = 500  # Number of training steps 
+    lbfgs_max_iterations = 1000 # Max iterations for lbfgs
     
 ##### Training
     model.train(adam_iterations, lbfgs_max_iterations)
