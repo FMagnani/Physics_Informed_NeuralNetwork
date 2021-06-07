@@ -203,7 +203,9 @@ def lbfgs(opfunc, x, config, state):
     state.funcEval = state.funcEval + lsFuncEval
     
     # logging iteration time
-    print('iteration', nIter, '   ',start_time-time.time(),'sec/it:')
+    if (nIter%10==0):
+      print('iteration', nIter, '   ',time.time()-start_time)
+      start_time = time.time()
 
     ############################################################
     ## check conditions
