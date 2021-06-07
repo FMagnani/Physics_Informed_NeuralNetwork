@@ -182,7 +182,7 @@ class Schrodinger_PINN():
             v_x = tape.gradient(v, x_f)
             
         u_t = tape.gradient(u, t_f)
-        v_t = tape.gradient(v, x_f)        
+        v_t = tape.gradient(v, t_f)        
             
         u_xx = tape.gradient(u_x, x_f)
         v_xx = tape.gradient(v_x, x_f)
