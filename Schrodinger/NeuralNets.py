@@ -20,7 +20,7 @@ class neural_net(tf.keras.Sequential):
     def __init__(self, ub, lb, layers):
         super(neural_net, self).__init__()
         
-#        self.layers_list = [2, 100, 100, 100, 100, 2]
+#        layers is something like [2, 100, 100, 100, 100, 2]
        
         tf.keras.backend.set_floatx('float64')
         
@@ -240,10 +240,12 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
     def train(self, ADAM_iterations, LBFGS_max_iterations=500, optimizer=tf.keras.optimizers.Adam()):
             
         # ADAM training
-        super(Schrod_PINN_LBFGS, self).train(ADAM_iterations)
+        if (ADAM_iterations):
+          super(Schrod_PINN_LBFGS, self).train(ADAM_iterations)
             
         # LBFGS trainig
-        self.LBFGS_training(LBFGS_max_iterations)
+        if (LBFGS_max_iterations):
+          self.LBFGS_training(LBFGS_max_iterations)
 
 
     def LBFGS_training(self, max_iterations):
