@@ -12,7 +12,7 @@ Created on Sat Jun  5 21:55:43 2021
 # from https://github.com/yaroslavvb/stuff/blob/master/eager_lbfgs/eager_lbfgs.py
 
 import tensorflow as tf
-import numpy as np
+#import numpy as np
 import time
 import types
 
@@ -90,10 +90,8 @@ def lbfgs(opfunc, x, config, state):
   # optimize for a max of maxIter iterations
   nIter = 0
   times = []
-  start_time = time.time()
-  while nIter < maxIter:
 
-    print('iteration', nIter, '; ',start_time-time.time(),' sec/it:')
+  while nIter < maxIter:
       
     start_time = time.time()
     
@@ -203,6 +201,9 @@ def lbfgs(opfunc, x, config, state):
     # update func eval
     currentFuncEval = currentFuncEval + lsFuncEval
     state.funcEval = state.funcEval + lsFuncEval
+    
+    # logging iteration time
+    print('iteration', nIter, '   ',start_time-time.time(),'sec/it:')
 
     ############################################################
     ## check conditions
