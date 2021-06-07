@@ -81,7 +81,7 @@ class neural_net_2out(neural_net):
     def __init__(self, ub, lb, layers):
         super(neural_net_2out, self).__init__(ub, lb, layers)
 
-    def call(self, inputs):
+    def call(self, inputs, training=False):
         output = super(neural_net_2out, self).call(inputs)
         
         return output[:,0], output[:,1]
