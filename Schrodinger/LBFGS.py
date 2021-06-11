@@ -92,9 +92,7 @@ def lbfgs(opfunc, x, config, state):
   times = []
 
   while nIter < maxIter:
-      
-    start_time = time.time()
-    
+          
     # keep track of nb of iterations
     nIter = nIter + 1
     state.nIter = state.nIter + 1
@@ -202,10 +200,9 @@ def lbfgs(opfunc, x, config, state):
     currentFuncEval = currentFuncEval + lsFuncEval
     state.funcEval = state.funcEval + lsFuncEval
     
-    # logging iteration time
-    if (nIter%10==0):
-      print('iteration', nIter, '   ',time.time()-start_time)
-      start_time = time.time()
+    # Logging
+    print('iteration', nIter)
+
 
     ############################################################
     ## check conditions
