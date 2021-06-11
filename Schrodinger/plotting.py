@@ -26,6 +26,8 @@ from scipy.interpolate import griddata
     
 def plot_results(h_pred, h_exact, x,t,x0,tb,lb,ub, x_f,t_f):
 
+    plt.ioff()
+    
     # Create the grid of the domine
     X, T = np.meshgrid(x,t)
     X_star = np.hstack((X.flatten()[:,None], T.flatten()[:,None]))
@@ -124,12 +126,9 @@ def plot_results(h_pred, h_exact, x,t,x0,tb,lb,ub, x_f,t_f):
     
 
 
-def plot_error(h_pred, h_exact, x,t,x0,tb,lb,ub, title):
+def plot_error(h_pred, h_exact, x,t,x0,tb,lb,ub):
     
-    optimizer = title.split(sep='_')[0]
-    iteration = title.split(sep='_')[1]
-    
-    title = optimizer+' optimizer, iteration '+iteration
+    plt.ioff()
     
     # Create the grid of the domine
     X, T = np.meshgrid(x,t)
@@ -169,15 +168,9 @@ def plot_error(h_pred, h_exact, x,t,x0,tb,lb,ub, title):
     
     # Plot data - boundaries     
     ax1.plot(X_u_train[:,1], X_u_train[:,0], 'kx', label = 'Data (%d points)' % (X_u_train.shape[0]), markersize = 4, clip_on = False)
-             
-    # Print lines corresponding to the time slices
-    line = np.linspace(x.min(), x.max(), 2)[:,None]
-    ax1.plot(t[75]*np.ones((2,1)), line, 'k--', linewidth = 1)
-    ax1.plot(t[100]*np.ones((2,1)), line, 'k--', linewidth = 1)
-    ax1.plot(t[125]*np.ones((2,1)), line, 'k--', linewidth = 1)    
-    
+                 
     ax1.set_ylabel('$x$')
-    ax1.set_title('Prediction, '+title, fontsize = 15)
+    ax1.set_title('Prediction', fontsize = 12)
         
         
     # Select first row of the figure
@@ -196,7 +189,7 @@ def plot_error(h_pred, h_exact, x,t,x0,tb,lb,ub, title):
     # Title and labels
     ax.set_xlabel('$t$')
     ax.set_ylabel('$x$')
-    ax.set_title('Absolute error, '+title, fontsize = 15)
+    ax.set_title('Absolute error', fontsize = 12)
   
     return fig1
     
