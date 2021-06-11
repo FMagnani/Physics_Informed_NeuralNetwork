@@ -13,7 +13,7 @@ import scipy.io
 from pyDOE import lhs 
 
 import NeuralNets as NN
-from plotting import plot_results
+from plotting import plot_results, plot_error
 
 
 #%%
@@ -124,26 +124,11 @@ if __name__ == "__main__":
     # 500 ADAM + 1000 LBFGS is enough for a quite satisfactory result
     # Set to 0 the iteration to completely skip that optimization method   
 
-    check_freq = 2  # Number of training steps 
+    adam_iterations = 500  # Number of training steps 
+    lbfgs_max_iterations = 1000 # Max iterations for lbfgs
     
-    adam_total_it = 6
-    adam_groups = int(adam_total_it/check_freq)
-    
-    lbfgs_max_iterations = 14 # Max iterations for lbfgs
-    lbfgs_groups = int(lbfgs_max_iterations/check_freq)
-    
-##### Training   
-    for group in range(adam_groups):
-        model.train(check_freq, 0)
-        it = (group+1)*check_freq
-        w_name = 'checkpoints/adam_'+str(it)
-        model.model.save_weights(w_name)
-
-    for group in range(lbfgs_groups):
-        model.train(0, check_freq)
-        it = (group+1)*check_freq
-        w_name = 'checkpoints/lbfgs_'+str(it)
-        model.model.save_weights(w_name)
+##### Training
+    model.train(adam_iterations, lbfgs_max_iterations)
         
 
 #%%    
@@ -169,11 +154,11 @@ if __name__ == "__main__":
 
     # Plotting
     
-    fig = plot_results(h_pred, h_star, x,t,x0,tb,lb,ub, x_f,t_f)
+    fig_res = plot_results(h_pred, h_star, x,t,x0,tb,lb,ub, x_f,t_f)
+    fig_err = plot_error(h_pred, h_star, x,t,x0,tb,lb,ub)
 
-#    fig.savefig('results')
-
-
+    fig_res.show()
+    fig_err.show()
 
 
 
