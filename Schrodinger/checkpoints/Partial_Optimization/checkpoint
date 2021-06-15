@@ -1,0 +1,2 @@
+model_checkpoint_path: "1200_ADAM"
+all_model_checkpoint_paths: "1200_ADAM"
