@@ -7,6 +7,9 @@ Created on Fri Jun  4 18:41:40 2021
 
 """
 
+import sys
+sys.path.insert(0, '../Utils/')
+
 import tensorflow as tf
 import time
 from tqdm import tqdm
