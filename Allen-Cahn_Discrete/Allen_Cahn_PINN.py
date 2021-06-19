@@ -28,14 +28,15 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
         
         # Data initialization
         self.x0 = x0
-        self.x1 = np.vstack((lb,ub))
+        x1 = np.vstack((lb,ub))
+        self.x1 = tf.convert_to_tensor(x1)
         self.u0 = u0
         
         self.dt = dt
         self.q = max(q,1)
         
         # Load IRK weights
-        tmp = np.float32(np.loadtxt('../Utils/IRK_weights/Butcher_IRK%d.txt' % (q), ndmin = 2))
+        tmp = np.float64(np.loadtxt('../Utils/IRK_weights/Butcher_IRK%d.txt' % (q), ndmin = 2))
         self.IRK_weights = np.reshape(tmp[0:q**2+q], (q+1,q))
         self.IRK_times = tmp[q**2+q:]
         
@@ -59,13 +60,35 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
         return y + yB
 
         
+    def net_U0(self, x):
+        
+        with tf.GradientTape(persistent=True) as tape:
+            tape.watch(x)
 
+            U1 = self.model(x)
+            U = U1[:,:-1]
+            
+            U_x = tape.gradient(U, x)
+        
+        U_xx = tape.gradient(U_x, x)
+        
+        del tape
+                
+        F = 5.0*U - 5.0*U**3 + 0.0001*U_xx
+        U0 = U1 - self.dt*tf.matmul(F, self.IRK_weights.T)
+        
+        return U0
+    
+    
+    def net_U1(self, x):
 
+        with tf.GradientTape() as tape:
+            tape.watch(x)
+            U1 = self.model(x)
 
+        U1_x = tape.gradient(U1, x)  
 
-
-
-
+        return U1, U1_x # N x (q+1)
 
 
 
