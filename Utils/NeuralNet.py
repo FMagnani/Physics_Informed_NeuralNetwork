@@ -8,8 +8,12 @@ Created on Sat Jun 19 16:36:49 2021
 """
 
 import tensorflow as tf
+import time
+from tqdm import tqdm
+import numpy as np
+from LBFGS import lbfgs, Struct
 
-
+#%%
 
 class neural_net(tf.keras.Sequential):
     
@@ -71,3 +75,66 @@ class neural_net(tf.keras.Sequential):
             weights_biases = [weights, biases]
             layer.set_weights(weights_biases)
 
+
+class PhysicsInformedNN():
+    
+    def __init__(self):
+    
+        # Setting up the optimizers with the hyper-parameters
+        self.nt_config = Struct()
+        self.nt_config.learningRate = 1.2
+        self.nt_config.maxIter = 50
+        self.nt_config.nCorrection = 50
+        self.nt_config.tolFun = 1.0 * np.finfo(float).eps
+ 
+    def LBFGS_training(self, max_iterations):
+        
+        self.nt_config.maxIter = max_iterations
+        
+        lbfgs(self.loss_and_flat_grad,
+              self.model.get_weights(),
+              self.nt_config, Struct())
+        
+    
+    def loss_and_flat_grad(self, w):
+        
+        with tf.GradientTape() as tape:
+            self.model.set_weights(w)
+            loss_value = self.loss()
+        grad = tape.gradient(loss_value, self.model.trainable_variables)
+        grad_flat = []
+        for g in grad:
+            grad_flat.append(tf.reshape(g, [-1]))
+        grad_flat = tf.concat(grad_flat, 0)
+        return loss_value, grad_flat
+
+    def loss(self):
+        pass
+    
+    def train(self, Adam_iterations, LBFGS_max_iterations):
+            
+        # ADAM training
+        if (Adam_iterations):
+                
+            optimizer=tf.keras.optimizers.Adam()
+                
+            start_time = time.time()    
+            #Train step
+            for _ in tqdm(range(Adam_iterations)):
+                self.Adam_train_step(optimizer)
+            elapsed = time.time() - start_time                
+            print('Training time: %.4f' % (elapsed))
+                            
+        # LBFGS trainig
+        if (LBFGS_max_iterations):
+            self.LBFGS_training(LBFGS_max_iterations)        
+    
+        
+    def Adam_train_step(self, optimizer):
+        
+        with tf.GradientTape() as tape:
+            loss_value = self.loss()
+ 
+        grads = tape.gradient(loss_value, self.model.trainable_variables)    
+        optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+  
