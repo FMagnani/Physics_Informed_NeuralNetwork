@@ -148,15 +148,23 @@ class Schrodinger_PINN(lbfgs_PINN):
         self.t_f = t_f
         self.X_star = X_star
         
-    
-    def train(self, n_iterations, optimizer=tf.keras.optimizers.Adam()):
-    
-        start_time = time.time()    
-        #Train step
-        for _ in tqdm(range(n_iterations)):
-            self.train_step(optimizer)
-        elapsed = time.time() - start_time                
-        print('Training time: %.4f' % (elapsed))
+    def train(self, Adam_iterations, LBFGS_max_iterations=500, optimizer=tf.keras.optimizers.Adam()):
+            
+        # ADAM training
+        if (Adam_iterations):
+                
+            optimizer=tf.keras.optimizers.Adam()
+                
+            start_time = time.time()    
+            #Train step
+            for _ in tqdm(range(Adam_iterations)):
+                self.train_step(optimizer)
+            elapsed = time.time() - start_time                
+            print('Training time: %.4f' % (elapsed))
+                            
+        # LBFGS trainig
+        if (LBFGS_max_iterations):
+            self.LBFGS_training(LBFGS_max_iterations)        
     
         
     def train_step(self, optimizer):
