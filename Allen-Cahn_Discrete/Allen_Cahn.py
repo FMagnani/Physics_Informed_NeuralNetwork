@@ -9,6 +9,7 @@ Created on Sat Jun 19 18:39:10 2021
 
 import numpy as np
 import scipy.io
+import tensorflow as tf
 
 from Allen_Cahn_PINN import Allen_Cahn_PINN
 
@@ -43,6 +44,31 @@ if __name__ == "__main__":
     # Test data
     x_star = x
 
+    # Conversion to tensors    
+    x0 = tf.convert_to_tensor(x0)
+    u0 = tf.convert_to_tensor(u0)
+    x_star = tf.convert_to_tensor(x_star)
+
     model = Allen_Cahn_PINN(x0, u0, layers, dt, lb, ub, q)
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
