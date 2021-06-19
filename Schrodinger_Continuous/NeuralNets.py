@@ -91,9 +91,48 @@ class neural_net_2out(neural_net):
 
 
 
-class Schrodinger_PINN():
+class lbfgs_PINN():
+    
+    def __init__(self):
+    
+        # Setting up the optimizers with the hyper-parameters
+        self.nt_config = Struct()
+        self.nt_config.learningRate = 1.2
+        self.nt_config.maxIter = 50
+        self.nt_config.nCorrection = 50
+        self.nt_config.tolFun = 1.0 * np.finfo(float).eps
+ 
+    def LBFGS_training(self, max_iterations):
+        
+        self.nt_config.maxIter = max_iterations
+        
+        lbfgs(self.loss_and_flat_grad,
+              self.model.get_weights(),
+              self.nt_config, Struct())
+        
+    
+    def loss_and_flat_grad(self, w):
+        
+        with tf.GradientTape() as tape:
+            self.model.set_weights(w)
+            loss_value = self.loss()
+        grad = tape.gradient(loss_value, self.model.trainable_variables)
+        grad_flat = []
+        for g in grad:
+            grad_flat.append(tf.reshape(g, [-1]))
+        grad_flat = tf.concat(grad_flat, 0)
+        return loss_value, grad_flat
+
+    def loss(self):
+        pass
+
+#%%
+
+class Schrodinger_PINN(lbfgs_PINN):
     
     def __init__(self, x0, u0, v0, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, layers):
+        
+        super(Schrodinger_PINN, self).__init__()
         
         self.model = neural_net_2out(ub, lb, layers)        
         
@@ -123,13 +162,18 @@ class Schrodinger_PINN():
     def train_step(self, optimizer):
         
         with tf.GradientTape() as tape:
-            loss_value = self.loss(self.x0,self.t0, self.u0,self.v0)
+            loss_value = self.loss()
  
         grads = tape.gradient(loss_value, self.model.trainable_variables)    
         optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
   
         
-    def loss(self, x0,t0, u0,v0):
+    def loss(self):
+        
+        x0 = self.x0
+        t0 = self.t0
+        u0 = self.u0
+        v0 = self.v0
     
         # Loss from supervised learning (at t=0)
         X0 = tf.stack([x0, t0], axis=1)
@@ -264,7 +308,7 @@ class Schrod_PINN_LBFGS(Schrodinger_PINN):
         
         with tf.GradientTape() as tape:
             self.model.set_weights(w)
-            loss_value = self.loss(self.x0,self.t0, self.u0,self.v0)
+            loss_value = self.loss()
         grad = tape.gradient(loss_value, self.model.trainable_variables)
         grad_flat = []
         for g in grad:
