@@ -59,7 +59,7 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
     
         return y + yB
 
-        
+
     def net_U0(self, x):
         
         with tf.GradientTape(persistent=True) as tape:
@@ -91,6 +91,11 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
         return U1, U1_x # N x (q+1)
 
 
+    def predict(self, x):
+        
+        U1_pred = self.model(x)
+        
+        return U1_pred
 
 
 
