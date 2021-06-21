@@ -1,0 +1,5 @@
+.gitignore
+Schrodinger_Continuous/__pycache__/
+Utils/__pycache__/
+Allen-Cahn_Discrete/__pycache__/
+Utils/IRK_weights
