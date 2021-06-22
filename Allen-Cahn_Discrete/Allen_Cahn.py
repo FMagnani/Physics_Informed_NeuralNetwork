@@ -20,6 +20,10 @@ if __name__ == "__main__":
         
     ###    MAIN    ###
     
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
+    
     q = 100
     layers = [1, 200, 200, 200, 200, q+1]
     lb = np.array([-1.0])
