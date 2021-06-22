@@ -16,9 +16,7 @@ import matplotlib.pyplot as plt
 
 #%%
 
-def plot_slice(Exact_h,h_pred, idx_t1, x,t):
-    
-    fig, ax = plt.subplots(1,1)
+def plot_slice(ax, Exact_h,h_pred, idx_t1, x,t):
     
     ax.plot(x,Exact_h[idx_t1,:], 'b-', linewidth = 2, label = 'Exact')       
     ax.plot(x,h_pred, 'r--', linewidth = 2, label = 'Prediction')
@@ -29,7 +27,7 @@ def plot_slice(Exact_h,h_pred, idx_t1, x,t):
     ax.set_xlim([-5.1,5.1])
     ax.set_ylim([-0.1,5.1])
 
-    
+    return ax
     
     
     

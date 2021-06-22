@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # t slices: 75, 100, 125
 
     idx_t0 = 0
-    idx_t1 = 75
+    idx_t1 = 10
     dt = t[idx_t1] - t[idx_t0]
 
     idx_x = np.random.choice(Exact_u.shape[1], N, replace=False) 
@@ -85,8 +85,8 @@ if __name__ == "__main__":
 
     ###    TRAINING    ###
 
-    adam_iterations = 40     # Number of training steps 
-    lbfgs_max_iterations = 40 # Max iterations for lbfgs
+    adam_iterations = 500     # Number of training steps 
+    lbfgs_max_iterations = 500 # Max iterations for lbfgs
     
     model.train(adam_iterations, lbfgs_max_iterations)
 
@@ -100,7 +100,9 @@ if __name__ == "__main__":
 
     ###    PLOTTING    ###
     
-    plot_slice(Exact_h,h_pred, 75, x_star,t)
+    fig, ax = plt.subplots(1,1)
+    
+    plot_slice(ax, Exact_h,h_pred, idx_t1, x_star,t)
     plt.show()
 
 
