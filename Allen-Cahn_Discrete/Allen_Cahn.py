@@ -12,7 +12,7 @@ import scipy.io
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from Allen_Cahn_PINN import Allen_Cahn_Hybrid
+from Allen_Cahn_PINN import Allen_Cahn_PINN
 from plotting import plot_results, plot_loss_history
 
 #%%
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     u0 = tf.convert_to_tensor(u0)
     x_star = tf.convert_to_tensor(x_star)
 
-    model = Allen_Cahn_Hybrid(x0, u0, layers, dt, lb, ub, q)
+    model = Allen_Cahn_PINN(x0, u0, layers, dt, lb, ub, q)
     
 #%%
 
