@@ -91,10 +91,15 @@ class PhysicsInformedNN():
         
         self.nt_config.maxIter = max_iterations
         
-        lbfgs(self.loss_and_flat_grad,
-              self.model.get_weights(),
-              self.nt_config, Struct())
+        results = lbfgs(self.loss_and_flat_grad,
+                        self.model.get_weights(),
+                        self.nt_config, Struct())
         
+        optimal_w = results[0]
+        lbfgs_loss = results[1]
+        
+        self.model.set_weights(optimal_w)
+        return lbfgs_loss
     
     def loss_and_flat_grad(self, w):
         
@@ -117,17 +122,22 @@ class PhysicsInformedNN():
         if (Adam_iterations):
                 
             optimizer=tf.keras.optimizers.Adam()
-                
+            
+            Adam_hist = [self.loss()]
+            
             start_time = time.time()    
             #Train step
             for _ in tqdm(range(Adam_iterations)):
-                self.Adam_train_step(optimizer)
+                current_loss = self.Adam_train_step(optimizer)
+                Adam_hist.append(current_loss)
             elapsed = time.time() - start_time                
             print('Training time: %.4f' % (elapsed))
-                            
+            
         # LBFGS trainig
         if (LBFGS_max_iterations):
-            self.LBFGS_training(LBFGS_max_iterations)        
+            lbfgs_hist = self.LBFGS_training(LBFGS_max_iterations)        
+    
+        return Adam_hist, lbfgs_hist
     
         
     def Adam_train_step(self, optimizer):
@@ -138,3 +148,4 @@ class PhysicsInformedNN():
         grads = tape.gradient(loss_value, self.model.trainable_variables)    
         optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
   
+        return loss_value
