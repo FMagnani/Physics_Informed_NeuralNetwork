@@ -10,9 +10,10 @@ Created on Sat Jun 19 18:39:10 2021
 import numpy as np
 import scipy.io
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from Allen_Cahn_PINN import Allen_Cahn_PINN
-from plotting import plot_results
+from plotting import plot_results, plot_loss_history
 
 #%%
 
@@ -62,10 +63,10 @@ if __name__ == "__main__":
 
     ###    TRAINING    ###
 
-    adam_iterations = 100      # Number of training steps 
-    lbfgs_max_iterations = 100 # Max iterations for lbfgs
+    adam_iterations = 3      # Number of training steps 
+    lbfgs_max_iterations = 3 # Max iterations for lbfgs
     
-    model.train(adam_iterations, lbfgs_max_iterations)
+    loss_hist = model.train(adam_iterations, lbfgs_max_iterations)
         
 
 
@@ -84,7 +85,9 @@ if __name__ == "__main__":
 
     fig = plot_results(U1_pred, Exact,t,x_star,x,idx_t0,idx_t1,x0,u0,lb,ub)
 
-
+    fig1, ax1 = plt.subplots(1,1)
+    plot_loss_history(ax1, loss_hist[0], loss_hist[1])    
+    
 
 
 
