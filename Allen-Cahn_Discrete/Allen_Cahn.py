@@ -13,7 +13,11 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from Allen_Cahn_PINN import Allen_Cahn_PINN
-from plotting import plot_results, plot_loss_history
+from ACD_plotting import plot_results
+
+import sys
+sys.path.insert(0, '../Utils/')
+from plotting import plot_loss_history
 
 #%%
 

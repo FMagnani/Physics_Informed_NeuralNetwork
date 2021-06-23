@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 from Schrodinger_Discrete_PINN import Schrodinger_PINN
 from plotting import plot_slice
 
+import sys
+sys.path.insert(0, '../Utils/')
+from plotting import plot_loss_history
 
 #%%
 
@@ -88,7 +91,7 @@ if __name__ == "__main__":
     adam_iterations = 500     # Number of training steps 
     lbfgs_max_iterations = 500 # Max iterations for lbfgs
     
-    model.train(adam_iterations, lbfgs_max_iterations)
+    loss_hist = model.train(adam_iterations, lbfgs_max_iterations)
 
 
 #%%
@@ -100,11 +103,15 @@ if __name__ == "__main__":
 
     ###    PLOTTING    ###
     
-    fig, ax = plt.subplots(1,1)
+    fig, [ax_u, ax_v, ax_h] = plt.subplots(1,3)
     
-    plot_slice(ax, Exact_h,h_pred, idx_t1, x_star,t)
+    plot_slice(ax_u, Exact_u,U1_pred[:,-1:], idx_t1, x_star,t)
+    plot_slice(ax_v, Exact_v,V1_pred[:,-1:], idx_t1, x_star,t)
+    plot_slice(ax_h, Exact_h,h_pred, idx_t1, x_star,t)
     plt.show()
 
+    fig_loss, ax_loss = plt.subplots(1,1)
+    plot_loss_history(ax_loss, loss_hist[0], loss_hist[1])
 
 
 
