@@ -112,10 +112,10 @@ class Schrodinger_PINN(PhysicsInformedNN):
         del tape
                 
         F_u = -0.5*V_xx - (U**2 + V**2)*V
-        F_v = -0.5*U_xx + (U**2 + V**2)*U
+        F_v = +0.5*U_xx + (U**2 + V**2)*U
             
         U0 = U1 - self.dt*tf.matmul(F_u, self.IRK_weights.T)
-        V0 = U1 - self.dt*tf.matmul(F_v, self.IRK_weights.T)
+        V0 = V1 - self.dt*tf.matmul(F_v, self.IRK_weights.T)
         
         return U0, V0
 
