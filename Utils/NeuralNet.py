@@ -8,7 +8,7 @@ Created on Sat Jun 19 16:36:49 2021
 """
 
 import tensorflow as tf
-import tensorflow_probability as tfp
+import scipy.optimize
 
 import time
 from tqdm import tqdm
@@ -62,6 +62,10 @@ class neural_net(tf.keras.Sequential):
             w.extend(biases)
         if convert_to_tensor:
             w = tf.convert_to_tensor(w)
+        
+        # Make the output Fortran contiguous
+        w = np.copy(w, order='F')
+        
         return w
 
 
@@ -92,6 +96,11 @@ class PhysicsInformedNN():
         for g in grad:
             grad_flat.append(tf.reshape(g, [-1]))
         grad_flat = tf.concat(grad_flat, 0)
+        
+        # Make the output Fortran contiguous
+        loss_value = np.copy(loss_value, order='F')
+        grad_flat = np.copy(grad_flat, order='F')
+        
         return loss_value, grad_flat
 
     def loss(self):
@@ -117,12 +126,19 @@ class PhysicsInformedNN():
         # LBFGS trainig
         if (LBFGS_max_iterations):
             
-            results = tfp.optimizer.lbfgs_minimize(self.loss_and_flat_grad, 
-                                               self.model.get_weights(),
-                                               max_iterations=LBFGS_max_iterations,
-                                               num_correction_pairs=50)
+            maxiter = LBFGS_max_iterations
             
-            optimal_w = results.position    
+            results = scipy.optimize.minimize(self.loss_and_flat_grad,
+                                              self.model.get_weights(),
+                                              method='L-BFGS-B',
+                                              jac=True,
+                                              options = {'maxiter': maxiter,
+                                                         'maxfun': 50000,
+                                                         'maxcor': 50,
+                                                         'maxls': 50,
+                                                         'ftol' : 1.0 * np.finfo(float).eps})
+            
+            optimal_w = results.x 
             self.model.set_weights(optimal_w)
     
         return Adam_hist
