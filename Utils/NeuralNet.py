@@ -119,7 +119,8 @@ class PhysicsInformedNN():
             
             results = tfp.optimizer.lbfgs_minimize(self.loss_and_flat_grad, 
                                                self.model.get_weights(),
-                                               max_iterations=LBFGS_max_iterations)
+                                               max_iterations=LBFGS_max_iterations,
+                                               num_correction_pairs=50)
             
             optimal_w = results.position    
             self.model.set_weights(optimal_w)
