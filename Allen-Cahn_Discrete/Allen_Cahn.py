@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 from Allen_Cahn_PINN import Allen_Cahn_PINN
 from ACD_plotting import plot_results
 
-# import sys
-# sys.path.insert(0, '../Utils/')
-# from plotting import plot_loss_history
+import sys
+sys.path.insert(0, '../Utils/')
+from plotting import plot_Adam_history
 
 #%%
 
@@ -67,10 +67,12 @@ if __name__ == "__main__":
 
     ###    TRAINING    ###
 
+    # GPU: lbfgs - 100 its/16 sec
+
     adam_iterations = 1      # Number of training steps 
     lbfgs_max_iterations = 2 # Max iterations for lbfgs
     
-    Adam_hist = model.train(adam_iterations, lbfgs_max_iterations)
+    Adam_loss_hist = model.train(adam_iterations, lbfgs_max_iterations)
         
 
 
@@ -89,7 +91,11 @@ if __name__ == "__main__":
 
     fig = plot_results(U1_pred, Exact,t,x_star,x,idx_t0,idx_t1,x0,u0,lb,ub)
     
-
+    fig1, ax1 = plt.subplots(1,1)
+    plot_Adam_history(ax1, Adam_loss_hist)
+    
+    
+    
 
 
     
