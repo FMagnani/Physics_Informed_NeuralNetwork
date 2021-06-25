@@ -78,7 +78,7 @@ def plot_results(u_pred, u_exact, x,t,x0,tb,lb,ub, x_f,t_f):
     
     # Select secpnd row of the figure
     gs1 = gridspec.GridSpec(1, 2)
-    gs1.update(top=1-1/3, bottom=0, left=0.1, right=0.9, wspace=0.5)
+    gs1.update(top=1-1/3-0.1, bottom=0.1, left=0.1, right=0.9, wspace=0.5)
     ax = plt.subplot(gs1[:, :])
         
     # First slice
@@ -89,8 +89,13 @@ def plot_results(u_pred, u_exact, x,t,x0,tb,lb,ub, x_f,t_f):
     ax.set_ylabel('$|h(t,x)|$')    
     ax.set_title('$t = %.2f$' % (t[20]), fontsize = 10)
     ax.axis('square')
-    ax.set_xlim([-5.1,5.1])
-    ax.set_ylim([-0.1,5.1])
+    
+    x_min = np.min(x0) - 0.1
+    x_max = np.max(x0) + 0.1
+    y_min = np.min(H_true[20,:]) - 0.1
+    y_max = np.max(H_true[20,:]) + 0.1
+    ax.set_xlim([x_min,x_max])
+    ax.set_ylim([y_min,y_max])
     
     # Second slice
     ax = plt.subplot(gs1[0, 1])
@@ -99,8 +104,11 @@ def plot_results(u_pred, u_exact, x,t,x0,tb,lb,ub, x_f,t_f):
     ax.set_xlabel('$x$')
     ax.set_ylabel('$|h(t,x)|$')
     ax.axis('square')
-    ax.set_xlim([-5.1,5.1])
-    ax.set_ylim([-0.1,5.1])
+    
+    y_min = np.min(H_true[180,:]) - 0.1
+    y_max = np.max(H_true[180,:]) + 0.1
+    ax.set_xlim([x_min,x_max])
+    ax.set_ylim([y_min,y_max])
     ax.set_title('$t = %.2f$' % (t[180]), fontsize = 10)
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.8), ncol=5, frameon=False)
     
