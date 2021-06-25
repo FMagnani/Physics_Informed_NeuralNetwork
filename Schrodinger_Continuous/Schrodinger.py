@@ -18,7 +18,7 @@ from SC_plotting import plot_results, plot_error
 import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, '../Utils/')
-from plotting import plot_loss_history
+from plotting import plot_Adam_history
 
 #%%
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     lbfgs_max_iterations = 2 # Max iterations for lbfgs
     
 ##### Training
-    loss_hist = model.train(adam_iterations, lbfgs_max_iterations)
+    Adam_hist = model.train(adam_iterations, lbfgs_max_iterations)
         
 
 #%%    
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     fig_err.show()
 
     fig_loss, ax_loss = plt.subplots(1,1)
-    plot_loss_history(ax_loss, loss_hist[0], loss_hist[1])
+    plot_Adam_history(ax_loss, Adam_hist)
 
 
 

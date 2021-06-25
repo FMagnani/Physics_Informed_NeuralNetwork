@@ -17,7 +17,7 @@ from plotting import plot_slice
 
 import sys
 sys.path.insert(0, '../Utils/')
-from plotting import plot_loss_history
+from plotting import plot_Adam_history
 
 #%%
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     adam_iterations = 500     # Number of training steps 
     lbfgs_max_iterations = 500 # Max iterations for lbfgs
     
-    loss_hist = model.train(adam_iterations, lbfgs_max_iterations)
+    Adam_hist = model.train(adam_iterations, lbfgs_max_iterations)
 
 
 #%%
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     plt.show()
 
     fig_loss, ax_loss = plt.subplots(1,1)
-    plot_loss_history(ax_loss, loss_hist[0], loss_hist[1])
+    plot_Adam_history(ax_loss, Adam_hist)
 
 
 
