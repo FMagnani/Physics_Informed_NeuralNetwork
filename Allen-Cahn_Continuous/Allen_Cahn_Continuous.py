@@ -52,13 +52,14 @@ if __name__ == "__main__":
     # x is too big to be handled (512) so it is reduced by half (to 256)
     # Only even entries are taken
     x = x[ np.arange(0,x.shape[0],2) ,:]
+    Exact = Exact[:, np.arange(0,Exact.shape[1],2)]
     
     # Creation of the 2D domain
     X, T = np.meshgrid(x,t)
     
     # The whole domain flattened, on which the final prediction will be made
     X_star = np.hstack((X.flatten()[:,None], T.flatten()[:,None]))
-    u_star = Exact.T.flatten()[:,None]
+    u_star = Exact.flatten()[:,None]
     
     # Choose N0 training points from x and the corresponding u, v at t=0
     idx_x = np.random.choice(x.shape[0], N0, replace=False)
@@ -145,8 +146,8 @@ if __name__ == "__main__":
 
     fig_res.show()
 
-    fig_loss, ax_loss = plt.subplots(1,1)
-    plot_Adam_history(ax_loss, Adam_hist)
+    # fig_loss, ax_loss = plt.subplots(1,1)
+    # plot_Adam_history(ax_loss, Adam_hist)
 
 
 
