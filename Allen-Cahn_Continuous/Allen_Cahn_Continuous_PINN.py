@@ -51,7 +51,7 @@ class Allen_Cahn_Continuous_PINN(PhysicsInformedNN):
     
         # Loss from PDE at the collocation pts
         f_u = self.net_f_u()
-        yS = tf.reduce_mean(tf.square(f_u))
+        yPDE = tf.reduce_mean(tf.square(f_u))
           
         # Loss from boundary conditions
         u_lb_pred, u_x_lb_pred = self.net_u(self.x_lb, self.t_lb)
@@ -60,7 +60,7 @@ class Allen_Cahn_Continuous_PINN(PhysicsInformedNN):
         yB = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + \
              tf.reduce_mean(tf.square(u_x_lb_pred - u_x_ub_pred))
     
-        return y0 + yS + yB
+        return y0 + yPDE + yB
 
 
     # Needed by the Loss
