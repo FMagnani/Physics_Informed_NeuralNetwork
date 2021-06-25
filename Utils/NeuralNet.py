@@ -8,10 +8,11 @@ Created on Sat Jun 19 16:36:49 2021
 """
 
 import tensorflow as tf
+import tensorflow_probability as tfp
+
 import time
 from tqdm import tqdm
 import numpy as np
-from LBFGS import lbfgs, Struct
 
 #%%
 
@@ -79,28 +80,8 @@ class neural_net(tf.keras.Sequential):
 class PhysicsInformedNN():
     
     def __init__(self):
-    
-        # Setting up the optimizers with the hyper-parameters
-        self.nt_config = Struct()
-        self.nt_config.learningRate = 1.2
-        self.nt_config.maxIter = 50
-        self.nt_config.nCorrection = 50
-        self.nt_config.tolFun = 1.0 * np.finfo(float).eps
- 
-    def LBFGS_training(self, max_iterations):
-        
-        self.nt_config.maxIter = max_iterations
-        
-        results = lbfgs(self.loss_and_flat_grad,
-                        self.model.get_weights(),
-                        self.nt_config, Struct())
-        
-        optimal_w = results[0]
-        lbfgs_loss = results[1]
-        
-        self.model.set_weights(optimal_w)
-        return lbfgs_loss
-    
+        pass
+   
     def loss_and_flat_grad(self, w):
         
         with tf.GradientTape() as tape:
@@ -135,9 +116,15 @@ class PhysicsInformedNN():
             
         # LBFGS trainig
         if (LBFGS_max_iterations):
-            lbfgs_hist = self.LBFGS_training(LBFGS_max_iterations)        
+            
+            results = tfp.optimizer.lbfgs_minimize(self.loss_and_flat_grad, 
+                                               self.model.get_weights(),
+                                               max_iterations=LBFGS_max_iterations)
+            
+            optimal_w = results.position    
+            self.model.set_weights(optimal_w)
     
-        return Adam_hist, lbfgs_hist
+        return Adam_hist
     
         
     def Adam_train_step(self, optimizer):

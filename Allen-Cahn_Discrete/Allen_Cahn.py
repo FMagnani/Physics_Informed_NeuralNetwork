@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 from Allen_Cahn_PINN import Allen_Cahn_PINN
 from ACD_plotting import plot_results
 
-import sys
-sys.path.insert(0, '../Utils/')
-from plotting import plot_loss_history
+# import sys
+# sys.path.insert(0, '../Utils/')
+# from plotting import plot_loss_history
 
 #%%
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     np.random.seed(1234)
     tf.random.set_seed(1234)
     
-    q = 100
+    q = 10
     layers = [1, 200, 200, 200, 200, q+1]
     lb = np.array([-1.0])
     ub = np.array([1.0])
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     Exact = np.real(data['uu']).T # T x N
     
     idx_t0 = 20
-    idx_t1 = 180
+    idx_t1 = 10
     dt = t[idx_t1] - t[idx_t0]
     
     # Initial data
@@ -67,10 +67,10 @@ if __name__ == "__main__":
 
     ###    TRAINING    ###
 
-    adam_iterations = 3      # Number of training steps 
-    lbfgs_max_iterations = 3 # Max iterations for lbfgs
+    adam_iterations = 1      # Number of training steps 
+    lbfgs_max_iterations = 2 # Max iterations for lbfgs
     
-    loss_hist = model.train(adam_iterations, lbfgs_max_iterations)
+    Adam_hist = model.train(adam_iterations, lbfgs_max_iterations)
         
 
 
@@ -88,9 +88,6 @@ if __name__ == "__main__":
     ###    PLOTTING    ###
 
     fig = plot_results(U1_pred, Exact,t,x_star,x,idx_t0,idx_t1,x0,u0,lb,ub)
-
-    fig1, ax1 = plt.subplots(1,1)
-    plot_loss_history(ax1, loss_hist[0], loss_hist[1])    
     
 
 
