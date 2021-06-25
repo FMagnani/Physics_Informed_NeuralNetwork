@@ -12,7 +12,7 @@ import tensorflow as tf
 import scipy.io
 from pyDOE import lhs 
 
-from Schrodinger_PINN import Schrodinger_PINN
+from Schrodinger_Continuous_PINN import Schrodinger_PINN
 from SC_plotting import plot_results, plot_error
 
 import matplotlib.pyplot as plt
