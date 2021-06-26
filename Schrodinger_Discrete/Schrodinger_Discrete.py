@@ -88,8 +88,8 @@ if __name__ == "__main__":
 
     ###    TRAINING    ###
 
-    adam_iterations = 500     # Number of training steps 
-    lbfgs_max_iterations = 500 # Max iterations for lbfgs
+    adam_iterations = 300     # Number of training steps 
+    lbfgs_max_iterations = 300 # Max iterations for lbfgs
     
     Adam_hist = model.train(adam_iterations, lbfgs_max_iterations)
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 #%%
 
     U1_pred, V1_pred = model.predict(x_star)
-    h_pred = U1_pred[:, -1:]**2 + V1_pred[:, -1:]**2
+    h_pred = np.sqrt(U1_pred[:, -1:]**2 + V1_pred[:, -1:]**2)
 
 #%%
 
