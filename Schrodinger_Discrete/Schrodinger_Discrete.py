@@ -13,7 +13,7 @@ import scipy.io
 import matplotlib.pyplot as plt
 
 from Schrodinger_Discrete_PINN import Schrodinger_PINN
-from plotting import plot_slice
+from SD_plotting import plot_slice
 
 import sys
 sys.path.insert(0, '../Utils/')
@@ -32,8 +32,8 @@ if __name__ == "__main__":
     layers = [1, 200, 200, 200, 200, 2*(q+1)]
     
     # Domain bounds
-    lb = np.array([-5.0, 0.0])          # left bottom corner
-    ub = np.array([5.0, np.pi/2])       # right upper corner
+    lb = np.array([-5.0])          # left bottom corner
+    ub = np.array([ 5.0])       # right upper corner
 
     N = 200     # Number of training pts from x=0 <- The only needed!
 
@@ -96,8 +96,25 @@ if __name__ == "__main__":
 
 #%%
 
+    ###    PREDICTION    ###
+
     U1_pred, V1_pred = model.predict(x_star)
     h_pred = np.sqrt(U1_pred[:, -1:]**2 + V1_pred[:, -1:]**2)
+
+#%%
+
+    ###    ERROR    ###
+    
+    U1_pred, V1_pred = model.predict(x_star)
+    h_pred = np.sqrt(U1_pred[:, -1:]**2 + V1_pred[:, -1:]**2)
+
+    error_u = np.linalg.norm(U1_pred[:,-1] - Exact_u[idx_t1,:], 2)/np.linalg.norm(Exact_u[idx_t1,:], 2)
+    error_v = np.linalg.norm(V1_pred[:,-1] - Exact_v[idx_t1,:], 2)/np.linalg.norm(Exact_v[idx_t1,:], 2)
+    error_h = np.linalg.norm(h_pred - Exact_h[idx_t1,:], 2)/np.linalg.norm(Exact_h[idx_t1,:], 2)
+    print('Error: %e' % (error_u))
+    print('Error: %e' % (error_v))
+    print('Error: %e' % (error_h))
+
 
 #%%
 
