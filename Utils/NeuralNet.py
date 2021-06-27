@@ -25,6 +25,8 @@ class neural_net(tf.keras.Sequential):
        
         tf.keras.backend.set_floatx('float64')
         
+        self.t_last_callback = 0
+        
         self.lb = lb
         self.ub = ub
 
@@ -106,32 +108,45 @@ class PhysicsInformedNN():
     def loss(self):
         pass
     
+    
     def train(self, Adam_iterations, LBFGS_max_iterations):
-            
+        
         # ADAM training
+        Adam_hist = []
         if (Adam_iterations):
-                
+            
+            print('~~ Adam optimization ~~')
+            
             optimizer=tf.keras.optimizers.Adam()
             
-            Adam_hist = [self.loss()]
-            
-            start_time = time.time()    
+            start_time = time.time()   
+            iteration_start_time = start_time
             #Train step
-            for _ in tqdm(range(Adam_iterations)):
+            for i in range(Adam_iterations):
                 current_loss = self.Adam_train_step(optimizer)
                 Adam_hist.append(current_loss)
-            elapsed = time.time() - start_time                
+                iteration_time = str(time.time()-iteration_start_time)[:5]
+                print('Loss:', current_loss.numpy(), 'time:', iteration_time, 'iter: '+str(i)+'/'+str(Adam_iterations) )                
+                iteration_start_time = time.time()
+            elapsed = time.time() - start_time      
+            Adam_hist.append(self.loss())
             print('Training time: %.4f' % (elapsed))
             
+        
         # LBFGS trainig
+        self.LBFGS_hist = [self.loss()]
         if (LBFGS_max_iterations):
             
+            print('~~ L-BFGS optimization ~~')
+                        
             maxiter = LBFGS_max_iterations
+            self.t_last_callback = time.time()
             
             results = scipy.optimize.minimize(self.loss_and_flat_grad,
                                               self.model.get_weights(),
                                               method='L-BFGS-B',
                                               jac=True,
+                                              callback=self.callback,
                                               options = {'maxiter': maxiter,
                                                          'maxfun': 50000,
                                                          'maxcor': 50,
@@ -141,9 +156,11 @@ class PhysicsInformedNN():
             optimal_w = results.x 
             self.model.set_weights(optimal_w)
     
-        return Adam_hist
+            print('~~ model trained ~~','\n','Final loss:',self.loss().numpy())
     
-        
+        return Adam_hist, self.LBFGS_hist
+    
+    @tf.function
     def Adam_train_step(self, optimizer):
         
         with tf.GradientTape() as tape:
@@ -153,3 +170,12 @@ class PhysicsInformedNN():
         optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
   
         return loss_value
+
+    def callback(self, pars):
+        t_interval = str(time.time()-self.t_last_callback)[:5]
+        loss_value = self.loss().numpy()
+        self.LBFGS_hist.append(loss_value)
+        
+        print('Loss:', loss_value, 'time:', t_interval)
+        self.t_last_callback = time.time()
+
