@@ -43,6 +43,7 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
         
         
     # Loss definition
+    @tf.function
     def loss(self):
         
         u0 = self.u0
@@ -59,7 +60,7 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
     
         return y + yB
 
-
+    @tf.function
     def net_U0(self, x):
         
         with tf.GradientTape(persistent=True) as tape:
@@ -79,7 +80,7 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
         
         return U0
     
-    
+    @tf.function
     def net_U1(self, x):
 
         with tf.GradientTape() as tape:
@@ -90,7 +91,7 @@ class Allen_Cahn_PINN(PhysicsInformedNN):
 
         return U1, U1_x # N x (q+1)
 
-
+    @tf.function
     def predict(self, x):
         
         U1_pred = self.model(x)
